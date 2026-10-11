@@ -21,7 +21,11 @@ fn verify_directory(name: &str, expected_count: usize, valid: bool) {
             let encoded = job.to_yaml().unwrap();
             assert_eq!(v1::Validator::parse(&encoded).unwrap(), job);
         } else {
-            assert!(result.is_err(), "invalid fixture accepted: {}", path.display());
+            assert!(
+                result.is_err(),
+                "invalid fixture accepted: {}",
+                path.display()
+            );
             assert!(v1::Validator::validate(&input).is_err());
         }
         count += 1;
