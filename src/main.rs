@@ -25,8 +25,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         println!(
             "execarium {} (schemas: 1,2)",
-            execarium::IMPLEMENTATION_VERSION,
-            execarium::SCHEMA_VERSION
+            execarium::IMPLEMENTATION_VERSION
         );
         return Ok(());
     }
