@@ -2,17 +2,25 @@
 
 ## Rule: crate major == wire schema integer
 
-**Execarium 1.0.0** is the first stable release. The Rust package version
-in `Cargo.toml` is `1.0.0`, and conforming YAML documents declare
+**Execarium 1.0.0** is the first stable release. The Rust package
+version is now `1.1.0`, which adds backwards-compatible construction and
+versioned validator APIs. Conforming YAML documents still declare
 `schema: 1`.
 
 This is deliberate, not a typo:
 
-* **Git tag / implementation version:** `v1.0.0` / Rust crate `1.0.0`.
+* **Initial Git tag:** `v1.0.0` / Rust crate `1.0.0`.
+* **Current Git tag / implementation:** `v1.1.0` / Rust crate `1.1.0`.
 * **YAML wire schema:** integer `1`, not `1.0.0` or `"1"`.
 * **Compatibility mapping:** crate major 1 implements schema 1.
   A future crate major 2 implements schema 2; any optional support for schema
   1 must be explicit, never inferred or silently substituted.
+
+Each released library major version provides a version-namespaced validator,
+starting with `v1::Validator` for schema 1. The `parse_for_schema` and
+`validate_for_schema` dispatchers **reject unknown versions**.
+Older schemas, if explicitly supported in a future major crate, must keep
+their own independent validators and conformance suites.
 
 The same *major version* is shared; the patch and minor components are
 implementation release metadata. This avoids introducing a second, redundant
@@ -24,7 +32,7 @@ three-part version inside YAML.
 | --- | --- | --- |
 | Correct documentation wording, tests, packaging | stays `1` | patch release (`1.0.1`) |
 | Fix parser bug without changing the normative v1 contract | stays `1` | patch release, with regression test |
-| Add backwards-compatible library API or CLI convenience | stays `1` | minor release (`1.1.0`) |
+| Add backwards-compatible library API or CLI convenience | stays `1` | minor release (`1.1.0`, `1.2.0`, etc.) |
 | Add any new YAML key (even optional), remove/change a key, change field semantics or validation requirements | **new schema integer `2`** | **crate `2.0.0`** |
 | Add command lists with independent step semantics | new schema integer `2` | crate `2.0.0` |
 

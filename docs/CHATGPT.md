@@ -63,6 +63,13 @@ command: |
 Note that `and` is **Fish shell syntax**, not an Execarium sequencing
 primitive. v1 intentionally leaves script semantics to the selected shell.
 
+## Using the Rust library (optional)
+
+Human and AI producers need not use Rust to write valid schema-1 YAML.
+For programs that need to construct typed jobs or validate untrusted YAML,
+crate 1.1.0 adds `v1::Validator::{construct,render,validate,parse}`.
+Use these APIs without invoking a shell; see [RUST-API.md](RUST-API.md).
+
 ## Validation before delivery
 
 ```sh

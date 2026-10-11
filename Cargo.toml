@@ -1,9 +1,9 @@
 [package]
 name = "execarium"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 rust-version = "1.76"
-description = "Strict, versioned YAML job specification and validation-only CLI"
+description = "Strict, versioned YAML job specification, Rust builder, validator and CLI"
 license = "MIT"
 repository = "https://github.com/sguzman/execarium"
 readme = "README.md"

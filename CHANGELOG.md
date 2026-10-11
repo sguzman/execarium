@@ -4,6 +4,24 @@ All notable releases are documented here. Rust implementation releases follow
 Semantic Versioning. The **crate major version matches the YAML schema
 integer**; see [VERSIONING.md](docs/VERSIONING.md).
 
+## [1.1.0] — 2026-10-11
+
+**Compatible Rust library feature release; YAML schema remains 1.**
+
+* Public `execarium::v1::Validator` with explicit version-1
+  `parse`, `validate`, `construct`, and `render` methods.
+* `parse_for_schema`, `validate_for_schema` and
+  `SUPPORTED_SCHEMAS` for deliberate version selection, no fallback.
+* Typed construction shares the exact field constraints of the
+  existing YAML parser. `Job::to_yaml()` renders a complete
+  schema-1 document.
+* Rust example and round-trip tests for scalar quoting, multiline
+  commands, input rejection, and backwards compatibility.
+* Dedicated [Rust API guide](docs/RUST-API.md) for other projects.
+* Original crate 1.0.0 entry points remain available.
+
+**No schema 1 field changes.** No process execution or clipboard integration.
+
 ## [1.0.0] — 2026-10-11
 
 **First stable specification and Rust reference implementation.**
@@ -52,3 +70,5 @@ authentication, Docker, microVMs or remote execution. Those concerns belong
 to consumers or later specifications.
 
 [1.0.0]: https://github.com/sguzman/execarium/tree/v1.0.0
+
+[1.1.0]: https://github.com/sguzman/execarium/tree/v1.1.0

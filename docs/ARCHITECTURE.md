@@ -48,13 +48,23 @@ let _ = max_run_time;
 ```
 
 Public API:
-* `parse(&str) -> Result<Job, Error>`: strict shape/semantic validation;
-* `validate(&str) -> Result<(), Error>`: validity only;
+* `parse(&str) -> Result<Job, Error>`: existing strict shape/semantic validation;
+* `validate(&str) -> Result<(), Error>`: existing validity check;
+* `v1::Validator::{parse,validate,construct,render}`: version-specific
+  validation, typed construction and YAML emission;
+* `parse_for_schema(version, source)` / `validate_for_schema(version, source)`:
+  explicit validator selection (no fallback);
+* `Job::to_yaml()`: serialize a validated job to a YAML document;
 * `Job::{schema,shell,cwd,privilege,timeout_seconds,command}`: immutable accessors;
 * `Shell` and `Privilege`: closed enumerations;
 * `SCHEMA_VERSION`, `IMPLEMENTATION_VERSION`, `MAX_DOCUMENT_BYTES`,
   `MAX_COMMAND_BYTES`, `MAX_CWD_BYTES`, `MIN_TIMEOUT_SECONDS`,
   `MAX_TIMEOUT_SECONDS`: version and explicit limits.
+
+Both parsed and constructed jobs are checked by the **same field
+validator**, so typed construction cannot bypass timeout, path and command
+limits. Serialization produces a complete six-field schema-1 YAML document.
+The constructor is not a process runner.
 
 The command and working directory are returned as decoded UTF-8 strings;
 Execarium does not normalize the command, resolve paths, interpret permissions,
@@ -112,4 +122,4 @@ major version is aligned to its primary supported YAML schema number
 A future implementation could support older formats as an explicitly selected
 compatibility facility, never an implicit fallback. Pin a release tag or
 reviewed revision and check schema versions independently. See
-[VERSIONING.md](VERSIONING.md).
+[VERSIONING.md](VERSIONING.md) and [RUST-API.md](RUST-API.md).

@@ -14,6 +14,8 @@ separately authorized next step.
 * [x] Positive/negative parser tests and CI
 * [x] Accept v1.0.0 as the stable six-field baseline
 * [x] Align crate 1.0.0 with schema 1
+* [x] Add version-specific `v1::Validator`, typed construction, rendering and
+  shared validation in compatible crate 1.1.0
 * [x] Add versioning policy, release history and AI authoring instructions
 * [x] Configure CI to publish the immutable v1.0.0 tag after verification
 * [ ] Resume Jobflick and integrate structured submission **explicitly**

@@ -25,8 +25,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fx 'version = "1.0.0"' Cargo.toml
-          cargo run --quiet -- --version | grep -Fx 'execarium 1.0.0 (schema: 1)'
+          grep -Fx 'version = "1.1.0"' Cargo.toml
+          cargo run --quiet -- --version | grep -Fx 'execarium 1.1.0 (schema: 1)'
+      - name: Rust typed-construction example round-trips
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo run --quiet --example create_yaml | ./target/debug/execarium validate - | grep -q 'Valid Execarium schema 1'
       - name: CLI accepts documented examples
         shell: bash
         run: |
@@ -94,8 +99,8 @@ jobs:
           fi
           test ! -e "$root/not-run"
 
-  tag_v1:
-    name: Tag verified v1.0.0 release
+  tag_release:
+    name: Tag verified crate release
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -103,17 +108,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Tag exactly this verified revision, once
+      - name: Create immutable version tag after CI passes
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fx 'version = "1.0.0"' Cargo.toml
-          # A release tag is immutable. Later main commits must not move it.
-          if git ls-remote --exit-code --tags origin refs/tags/v1.0.0 >/dev/null; then
-            echo "v1.0.0 is already tagged; leaving it unchanged"
+          version="$(sed -nE 's/^version = "([0-9]+\\.[0-9]+\\.[0-9]+)"$/\\1/p' Cargo.toml | head -n1)"
+          test -n "$version"
+          tag="v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; leaving its original commit unchanged"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a v1.0.0 -m "Execarium v1.0.0: stable schema 1" "$GITHUB_SHA"
-          git push origin refs/tags/v1.0.0
+          git tag -a "$tag" -m "Execarium $tag: schema 1 library" "$GITHUB_SHA"
+          git push origin "refs/tags/$tag"

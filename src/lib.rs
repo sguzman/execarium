@@ -19,13 +19,16 @@
 //! assert_eq!(job.command(), "echo ok");
 //! ```
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use yaml_rust2::scanner::{Scanner, TokenType};
 
 /// The sole supported YAML schema major version in this release.
 /// Crate major version and schema major version MUST match.
 pub const SCHEMA_VERSION: u64 = 1;
+/// Only supported stable YAML wire schema. New major versions add validators
+/// explicitly rather than reinterpreting an existing document.
+pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION];
 /// Reference implementation version, independent of the YAML `schema` integer.
 pub const IMPLEMENTATION_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Maximum UTF-8 byte length of a complete YAML document.
@@ -41,7 +44,7 @@ pub const MAX_TIMEOUT_SECONDS: u64 = 7 * 24 * 60 * 60;
 
 /// The requested local shell *label*. Availability and permission to invoke
 /// that shell are the consumer's responsibility.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Shell {
     Fish,
@@ -66,7 +69,7 @@ impl fmt::Display for Shell {
 }
 
 /// Requested privilege mode; it is **metadata only**, never permission.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Privilege {
     None,
@@ -94,7 +97,7 @@ impl fmt::Display for Privilege {
 ///
 /// This type is constructible only through the strict parser. Other software
 /// must separately authorize and schedule it before performing any action.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Job {
     schema: u64,
     shell: Shell,
@@ -124,6 +127,12 @@ impl Job {
     }
     pub fn command(&self) -> &str {
         &self.command
+    }
+
+    /// Serialize to YAML preserving all six schema-1 fields. Does not execute.
+    /// The output can be validated again by `v1::Validator`.
+    pub fn to_yaml(&self) -> Result<String, Error> {
+        serde_yaml_ng::to_string(self).map_err(|e| Error::InvalidYaml(e.to_string()))
     }
 }
 
@@ -233,7 +242,13 @@ pub fn parse(input: &str) -> Result<Job, Error> {
     }
     let raw: RawJob =
         serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
+    validated_job(raw)
+}
 
+/// One shared field validator for parsed YAML and constructed typed jobs.
+/// There is no way to construct a public Job through this API without
+/// applying the exact same value constraints as YAML parsing.
+fn validated_job(raw: RawJob) -> Result<Job, Error> {
     if raw.schema != SCHEMA_VERSION {
         return Err(Error::UnsupportedSchema(raw.schema));
     }
@@ -283,3 +298,102 @@ pub fn parse(input: &str) -> Result<Job, Error> {
 pub fn validate(input: &str) -> Result<(), Error> {
     parse(input).map(|_| ())
 }
+
+/// Select an exact schema validator. Reject unsupported versions, and still
+/// require the YAML document's own `schema` to match the selected version.
+pub fn parse_for_schema(schema: u64, input: &str) -> Result<Job, Error> {
+    match schema {
+        v1::SCHEMA => v1::Validator::parse(input),
+        _ => Err(Error::UnsupportedSchema(schema)),
+    }
+}
+
+/// Validate using a caller-selected schema version, never a guessed fallback.
+pub fn validate_for_schema(schema: u64, input: &str) -> Result<(), Error> {
+    parse_for_schema(schema, input).map(|_| ())
+}
+
+/// Construct an independently validated schema-1 job from typed Rust values.
+///
+/// This performs all field validation but does not read the filesystem or
+/// authorize, queue, or execute a command. Prefer `v1::construct` when
+/// writing a version-specific consumer.
+pub fn construct(
+    shell: Shell,
+    cwd: impl Into<String>,
+    privilege: Privilege,
+    timeout_seconds: u64,
+    command: impl Into<String>,
+) -> Result<Job, Error> {
+    validated_job(RawJob {
+        schema: SCHEMA_VERSION,
+        shell,
+        cwd: cwd.into(),
+        privilege,
+        timeout_seconds,
+        command: command.into(),
+    })
+}
+
+/// Stable module namespace for schema 1. Future format versions get separate
+/// validators, avoiding accidental silent changes to the v1 contract.
+pub mod v1 {
+    pub use crate::{Job, Privilege, Shell};
+    use crate::{Error, SCHEMA_VERSION};
+
+    /// Exact YAML integer supported by this validator.
+    pub const SCHEMA: u64 = SCHEMA_VERSION;
+
+    /// Explicit version-1 validator. No filesystem or process side effects.
+    pub struct Validator;
+
+    impl Validator {
+        /// Parse and validate a complete schema-1 YAML document.
+        pub fn parse(input: &str) -> Result<Job, Error> {
+            crate::parse(input)
+        }
+
+        /// Validate without returning a job.
+        pub fn validate(input: &str) -> Result<(), Error> {
+            crate::validate(input)
+        }
+
+        /// Construct a validated job from Rust data.
+        pub fn construct(
+            shell: Shell,
+            cwd: impl Into<String>,
+            privilege: Privilege,
+            timeout_seconds: u64,
+            command: impl Into<String>,
+        ) -> Result<Job, Error> {
+            crate::construct(shell, cwd, privilege, timeout_seconds, command)
+        }
+
+        /// Serialize a validated job to YAML. Does not enqueue or execute.
+        pub fn render(job: &Job) -> Result<String, Error> {
+            job.to_yaml()
+        }
+    }
+
+    /// Construct a validated v1 job from typed Rust fields.
+    pub fn construct(
+        shell: Shell,
+        cwd: impl Into<String>,
+        privilege: Privilege,
+        timeout_seconds: u64,
+        command: impl Into<String>,
+    ) -> Result<Job, Error> {
+        Validator::construct(shell, cwd, privilege, timeout_seconds, command)
+    }
+
+    /// Parse an exact schema-1 YAML document.
+    pub fn parse(input: &str) -> Result<Job, Error> {
+        Validator::parse(input)
+    }
+
+    /// Validate an exact schema-1 YAML document.
+    pub fn validate(input: &str) -> Result<(), Error> {
+        Validator::validate(input)
+    }
+}
+

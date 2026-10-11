@@ -7,14 +7,16 @@ a consumer is being asked to run**, in which working directory, with what
 requested privilege level and execution timeout. It is an independent Rust library and a validation-only CLI,
 so Jobflick and future projects can share one contract without importing a scheduler.
 
-> **Status:** stable **v1.0.0** specification and Rust reference implementation.
+> **Status:** stable **v1.0.0** YAML specification; Rust reference library
+> **v1.1.0** adds versioned validation, typed construction and YAML rendering.
 > No execution, clipboard monitoring, background service, privilege escalation,
 > or installation hooks. This repository is not published to crates.io.
 
 ## Versions
 
-**Execarium v1.0.0** is the first stable release of YAML **schema 1** and the
-Rust **crate 1.0.0**. The YAML `schema` value deliberately remains the integer
+**Execarium v1.0.0** established stable YAML **schema 1** and the
+Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** adds construction and
+explicit per-schema validator APIs. The YAML `schema` remains the integer
 `1`, not `1.0.0`. Crate **major** version and schema integer are tied;
 crate minor/patch changes may improve the parser/API without changing schema
 1's meaning. Breaking changes to the YAML language require **schema 2** and
@@ -87,14 +89,14 @@ deferred until this standalone format has been reviewed and stabilized.
 
 Use the **Rust library** as an optional reference parser; ChatGPT and other
 producers can generate conforming YAML simply by following the specification.
-The library is not the format's owner.
+The library is not the format's owner. It offers both **string validation**
+and **construction** of conforming YAML; the v1 wire format is unchanged.
 
-Add the repository as a Git dependency (the first release is not published
-to crates.io):
+Add the repository as a Git dependency (not published to crates.io):
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.0.0" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.0" }
 ```
 
 ```rust
@@ -112,6 +114,36 @@ This references the immutable release tag. Cargo.lock pins the resolved
 commit for applications; security-sensitive consumers may additionally
 pin an exact reviewed `rev` instead of `tag`. Independently of the crate
 version, consumers should explicitly restrict accepted schema versions.
+
+### Versioned validator and constructor API
+
+The original `execarium::parse` and `execarium::validate` remain supported.
+New Rust code can use the v1 namespace. This is independent of whether ChatGPT
+authored the YAML or a Rust application constructed it.
+
+```rust
+use execarium::{v1, Shell, Privilege};
+
+let job = v1::Validator::construct(
+    Shell::Fish,
+    "/home/user/Projects/example",
+    Privilege::None,
+    600,
+    "cargo test",
+)?;
+let yaml = v1::Validator::render(&job)?;
+v1::Validator::validate(&yaml)?;
+assert_eq!(v1::Validator::parse(&yaml)?, job);
+# Ok::<(), execarium::Error>(())
+```
+
+`execarium::validate_for_schema(1, yaml)` selects exactly validator v1;
+asking for version 2 returns `UnsupportedSchema`, not an implicit fallback.
+The library handles **construction + serialization + validation**. The
+CLI remains validation-only, never an executor.
+
+Read the [complete Rust API guide](docs/RUST-API.md) for methods, invariants,
+compatibility and integration examples.
 
 ## CLI (validation only)
 
@@ -131,6 +163,7 @@ Invalid documents exit nonzero.
 cargo fmt --all -- --check
 cargo test --all-targets
 cargo clippy --all-targets -- -D warnings
+cargo run --example create_yaml
 cargo run -- validate examples/local-fish.yaml
 ```
 
