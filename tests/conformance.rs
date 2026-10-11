@@ -1,6 +1,6 @@
 use execarium::{
-    parse, validate, Error, Privilege, Shell, MAX_COMMAND_BYTES, MAX_CWD_BYTES,
-    MAX_DOCUMENT_BYTES, SCHEMA_VERSION,
+    parse, validate, Error, Privilege, Shell, MAX_COMMAND_BYTES, MAX_CWD_BYTES, MAX_DOCUMENT_BYTES,
+    SCHEMA_VERSION,
 };
 
 const MINIMAL: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n";
@@ -19,7 +19,10 @@ fn accepts_all_example_documents_without_executing_anything() {
     assert_eq!(local.command(), "cargo test");
 
     let multi = parse(include_str!("../examples/multiline-fish.yaml")).unwrap();
-    assert_eq!(multi.command(), "cargo fmt --check\nand cargo test\nand cargo build\n");
+    assert_eq!(
+        multi.command(),
+        "cargo fmt --check\nand cargo test\nand cargo build\n"
+    );
 
     let elevated = parse(include_str!("../examples/privileged-doas.yaml")).unwrap();
     assert_eq!(elevated.privilege(), Privilege::Doas);
@@ -75,7 +78,9 @@ fn top_level_must_be_one_mapping_with_no_yaml_indirection() {
     reject(&format!("{MINIMAL}---\nschema: 1\n"));
     reject("schema: 1\nshell: &s fish\ncwd: /tmp\nprivilege: none\ncommand: *s\n");
     reject("schema: 1\nshell: !custom fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n");
-    reject("%YAML 1.2\n---\nschema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n");
+    reject(
+        "%YAML 1.2\n---\nschema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n",
+    );
     reject("schema: [1]\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n");
     reject("schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: [echo, ok]\n");
 }

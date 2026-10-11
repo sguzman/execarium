@@ -205,10 +205,14 @@ pub fn parse(input: &str) -> Result<Job, Error> {
         return Err(Error::InvalidCwd("must not contain NUL or line breaks"));
     }
     if raw.cwd.split('/').any(|part| part == "." || part == "..") {
-        return Err(Error::InvalidCwd("dot and parent-directory segments are not allowed"));
+        return Err(Error::InvalidCwd(
+            "dot and parent-directory segments are not allowed",
+        ));
     }
     if raw.command.trim().is_empty() {
-        return Err(Error::InvalidCommand("must not be empty or whitespace only"));
+        return Err(Error::InvalidCommand(
+            "must not be empty or whitespace only",
+        ));
     }
     if raw.command.len() > MAX_COMMAND_BYTES {
         return Err(Error::InvalidCommand("exceeds 128 KiB"));
