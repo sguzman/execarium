@@ -24,7 +24,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Err("Usage: execarium --version".into());
         }
         println!(
-            "execarium {} (schema: {})",
+            "execarium {} (schemas: 1,2)",
             execarium::IMPLEMENTATION_VERSION,
             execarium::SCHEMA_VERSION
         );
@@ -42,14 +42,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         read_bounded(File::open(source)?)?
     };
-    let job = execarium::parse(&document)?;
-    println!(
-        "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={})",
-        job.schema(),
-        job.shell(),
-        job.privilege(),
-        job.timeout_seconds()
-    );
+    let job = execarium::parse_document(&document)?;
+    match job {
+        execarium::Document::V1(spec) => println!(
+            "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={})",
+            spec.schema(), spec.shell(), spec.privilege(), spec.timeout_seconds()
+        ),
+        execarium::Document::V2(spec) => println!(
+            "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={}, steps={})",
+            spec.schema(), spec.shell(), spec.privilege(), spec.timeout_seconds(),
+            spec.commands().len()
+        ),
+    }
     Ok(())
 }
 
