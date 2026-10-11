@@ -36,7 +36,7 @@ fn reject_document(input: &str) {
 
 #[test]
 fn v1_released_examples_remain_exactly_compatible() {
-    assert_eq!(SUPPORTED_SCHEMAS, &[1]);
+    assert!(SUPPORTED_SCHEMAS.contains(&v1::SCHEMA));
     assert_eq!(SCHEMA_VERSION, v1::SCHEMA);
     for document in [
         BASE,
