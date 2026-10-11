@@ -9,7 +9,7 @@ Execarium has **two contracts** with different compatibility requirements.
    defined in [SPEC-v1.md](SPEC-v1.md). New or changed YAML fields or meanings
    require a **new schema integer**, for example `schema: 2`.
 2. **Rust reference crate:** conventional Semantic Versioning (SemVer),
-   currently **1.1.2**. A major increment indicates a breaking **Rust API**
+   currently **1.2.0**. A major increment indicates a breaking **Rust API**
    change; minor releases add backward-compatible Rust features; patches
    correct behavior, documentation, packaging, or tests without breaking the
    Rust API.
@@ -22,12 +22,12 @@ For example:
 
 | Example | Possible Rust crate | Supported YAML schemas |
 | --- | --- | --- |
-| Current MVP | `1.1.2` | `[1]` |
+| Stable schema-1 MVP | `1.1.2` | `[1]` |
 | Future crate with redesigned Rust API only | `2.0.0` | `[1]` |
-| Future backwards-compatible multi-schema support | `1.2.0` | `[1, 2]` |
+| Additive schema-2 implementation | `1.2.0` | `[1, 2]` |
 
-These future examples illustrate the *policy*, not promised releases or
-implemented validators. **Currently only `v1::Validator` exists.**
+The 1.2.0 line adds a separate `v2::Validator`, without modifying schema 1.
+The hypothetical 2.0.0 line illustrates crate/schema version independence.
 
 ## Schema compatibility is explicit
 
@@ -35,11 +35,12 @@ implemented validators. **Currently only `v1::Validator` exists.**
 * The currently implemented schema-1 validator MUST reject unknown, missing,
   duplicated, or mismatched fields and unsupported YAML syntax.
 * A consumer MUST decide which document schema versions it accepts.
-* Query the Rust library's `SUPPORTED_SCHEMAS` and select
-  `parse_for_schema(version, input)`, `validate_for_schema(version, input)`,
-  or the explicit `v1::Validator`. Never infer a schema from the crate
-  version or silently select a different validator.
-* A future crate MAY implement several versioned parsers concurrently, but
+* Use `parse_document`/`parse_document_for_schema` for multi-schema
+  selection, or the explicit `v1::Validator` / `v2::Validator`.
+  Legacy `parse`, `parse_for_schema`, and `validate_for_schema` continue
+  returning the original v1 Job API for compatibility. Never infer a wire
+  schema from the crate version.
+* This crate implements two versioned parsers concurrently and
   MUST preserve earlier format semantics, rejection behavior and conformance
   suites. Breaking changes to a *Rust* public API are versioned by Rust
   SemVer, regardless of supported schema integers.
@@ -66,7 +67,7 @@ Schema 1 will not change meaning in place.
 
 ## Release practice
 
-* Git release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.1.2`) identify
+* Git release tags (`v1.0.0` through `v1.2.0`, when published) identify
   **Rust crate releases**, not YAML schema revisions.
 * A schema's historical first release is recorded in its normative
   specification and changelog.
@@ -86,6 +87,6 @@ YAML schema 1 contains exactly these **six required fields**:
 It does not include `commands`, `executor`, variable interpolation,
 implicit defaults, or an automatic clipboard trigger.
 
-See [SPEC-v1.md](SPEC-v1.md) for the normative wire contract,
+See [SPEC-v1.md](SPEC-v1.md) and [SPEC-v2.md](SPEC-v2.md) for wire contracts,
 [RUST-API.md](RUST-API.md) for the reference crate interface and
 [CHATGPT.md](CHATGPT.md) for AI-facing authoring instructions.
