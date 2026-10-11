@@ -88,6 +88,34 @@ Firecracker, microVMs, remote/CI execution, automatic sudo/doas
 authentication, and independent `commands:` lists are **not** part of
 the stable v1 specification.
 
+## Schema-2 sequences (independent shell steps)
+
+Use this separate version only when the task calls for distinct ordered steps
+that must stop on the first failure:
+
+```yaml
+schema: 2
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+commands:
+  - cargo fmt --check
+  - cargo test
+  - cargo build
+```
+
+The single `command` field is **not** accepted in schema 2; `commands`
+is **not** accepted in schema 1. Every step is a nonempty shell string;
+the list contains 1–256 steps, 128 KiB total command source. A consuming
+executor must run steps one at a time, stop on the first nonzero status,
+report the failed step, and enforce one timeout for the whole sequence.
+Steps do not share transient shell state. Use schema-1 `command: |` for
+a script intentionally sharing shell state.
+
+Refer to [SPEC-v2.md](SPEC-v2.md), not the v1 authoring checklist, for
+all normative schema-2 details. Execarium still performs **no execution**.
+
 ## Consumer warning
 
 Generated YAML is untrusted input. Reading it, validating it, or copying
