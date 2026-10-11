@@ -19,6 +19,8 @@
 //! assert_eq!(job.command(), "echo ok");
 //! ```
 
+pub mod v2;
+
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use yaml_rust2::scanner::{Scanner, TokenType};
@@ -30,7 +32,7 @@ use yaml_rust2::scanner::{Scanner, TokenType};
 pub const SCHEMA_VERSION: u64 = 1;
 /// Explicitly supported YAML schema versions. Additional format versions
 /// require separately defined validators; never silently reinterpret v1.
-pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION];
+pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION, v2::SCHEMA];
 /// Reference implementation version, independent of the YAML `schema` integer.
 pub const IMPLEMENTATION_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Maximum UTF-8 byte length of a complete YAML document.
@@ -147,7 +149,7 @@ pub enum Error {
     InvalidYaml(String),
     #[error("unsupported YAML feature: {0}")]
     UnsupportedYaml(&'static str),
-    #[error("unsupported Execarium schema version {0}; only schema 1 is supported")]
+    #[error("unsupported Execarium schema version {0}; supported schemas are 1 and 2")]
     UnsupportedSchema(u64),
     #[error("invalid working directory: {0}")]
     InvalidCwd(&'static str),
@@ -174,7 +176,7 @@ struct RawJob {
 ///
 /// This checks *scanner tokens*, not substrings, so literal `&`, `*`, `!`
 /// within command text or quoted scalars are not incorrectly rejected.
-fn reject_unsupported_yaml_features(input: &str) -> Result<(), Error> {
+pub(crate) fn reject_unsupported_yaml_features(input: &str) -> Result<(), Error> {
     let mut scanner = Scanner::new(input.chars());
     let mut explicit_documents = 0;
     while let Some(token) = scanner
@@ -201,6 +203,50 @@ fn reject_unsupported_yaml_features(input: &str) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+/// The document's declared wire schema version, without any default or fallback.
+/// Consumers must still run the exact versioned validator before accepting work.
+pub fn detect_schema(input: &str) -> Result<u64, Error> {
+    if input.len() > MAX_DOCUMENT_BYTES { return Err(Error::DocumentTooLarge); }
+    reject_unsupported_yaml_features(input)?;
+    let value: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
+    let map = value.as_mapping().ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
+    let schema = map.get(serde_yaml_ng::Value::String("schema".into()));
+    match schema {
+        Some(serde_yaml_ng::Value::Number(n)) => n.as_u64().ok_or_else(||
+            Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
+        _ => Err(Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
+    }
+}
+
+/// Typed version-preserving outcome for tools handling multiple wire schemas.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Document {
+    V1(Job),
+    V2(v2::Job),
+}
+
+/// Parse exactly the version declared by the document; never reinterpret it.
+pub fn parse_document(input: &str) -> Result<Document, Error> {
+    match detect_schema(input)? {
+        1 => v1::Validator::parse(input).map(Document::V1),
+        2 => v2::Validator::parse(input).map(Document::V2),
+        other => Err(Error::UnsupportedSchema(other)),
+    }
+}
+
+pub fn validate_document(input: &str) -> Result<(), Error> {
+    parse_document(input).map(|_| ())
+}
+
+/// Parse a document against an explicitly selected schema version.
+pub fn parse_document_for_schema(schema: u64, input: &str) -> Result<Document, Error> {
+    if detect_schema(input)? != schema {
+        return Err(Error::InvalidYaml("declared schema differs from requested version".into()));
+    }
+    parse_document(input)
 }
 
 /// Parse one strict v1 document. This function only handles data.
@@ -301,8 +347,8 @@ pub fn validate(input: &str) -> Result<(), Error> {
     parse(input).map(|_| ())
 }
 
-/// Select an exact schema validator. Reject unsupported versions, and still
-/// require the YAML document's own `schema` to match the selected version.
+/// Legacy exact-v1 parser for backwards compatibility with the original Job API.
+/// For schema 2 use v2::Validator or parse_document_for_schema.
 pub fn parse_for_schema(schema: u64, input: &str) -> Result<Job, Error> {
     match schema {
         v1::SCHEMA => v1::Validator::parse(input),
@@ -310,7 +356,8 @@ pub fn parse_for_schema(schema: u64, input: &str) -> Result<Job, Error> {
     }
 }
 
-/// Validate using a caller-selected schema version, never a guessed fallback.
+/// Validate using the legacy v1 Job API. For any supported schema use
+/// parse_document_for_schema or validate_document.
 pub fn validate_for_schema(schema: u64, input: &str) -> Result<(), Error> {
     parse_for_schema(schema, input).map(|_| ())
 }
