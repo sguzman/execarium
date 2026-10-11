@@ -363,10 +363,15 @@ pub fn parse_for_schema(schema: u64, input: &str) -> Result<Job, Error> {
     }
 }
 
-/// Validate using the legacy v1 Job API. For any supported schema use
-/// parse_document_for_schema or validate_document.
+/// Validate against exactly the requested supported schema.
+/// The typed legacy parse_for_schema API remains schema-1-only; callers
+/// needing a typed schema-2 result should use parse_document_for_schema.
 pub fn validate_for_schema(schema: u64, input: &str) -> Result<(), Error> {
-    parse_for_schema(schema, input).map(|_| ())
+    match schema {
+        1 => v1::Validator::validate(input),
+        2 => v2::Validator::validate(input),
+        other => Err(Error::UnsupportedSchema(other)),
+    }
 }
 
 /// Construct an independently validated schema-1 job from typed Rust values.
