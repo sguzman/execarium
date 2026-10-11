@@ -55,6 +55,23 @@ jobs:
               exit 1
             fi
           done
+      - name: Schema-2 CLI sequence acceptance and strict rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./target/debug/execarium validate examples/sequence-fish.yaml | grep -q 'Valid Execarium schema 2.*steps=3'
+          if ./target/debug/execarium validate examples/invalid-sequence-v2.yaml; then
+            echo "Schema-2 non-string step must be rejected" >&2
+            exit 1
+          fi
+          if sed 's/schema: 2/schema: 1/' examples/sequence-fish.yaml | ./target/debug/execarium validate -; then
+            echo "v1 must reject v2 commands key" >&2
+            exit 1
+          fi
+          if sed 's/commands:/command:/' examples/sequence-fish.yaml | ./target/debug/execarium validate -; then
+            echo "v2 must reject v1 command key" >&2
+            exit 1
+          fi
       - name: CLI rejects unsupported input without executing it
         shell: bash
         run: |
