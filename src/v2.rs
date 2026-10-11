@@ -100,11 +100,19 @@ impl Validator {
             .as_mapping()
             .ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
         let get = |key: &str| mapping.get(serde_yaml_ng::Value::String(key.to_owned()));
-        if !matches!(get("schema"), Some(serde_yaml_ng::Value::Number(n)) if n.as_u64() == Some(SCHEMA)) {
+        if !matches!(
+            get("schema"),
+            Some(serde_yaml_ng::Value::Number(n)) if n.as_u64() == Some(SCHEMA)
+        ) {
             return Err(Error::InvalidYaml("schema must be the YAML integer 2".into()));
         }
-        if !matches!(get("timeout_seconds"), Some(serde_yaml_ng::Value::Number(n)) if n.as_u64().is_some()) {
-            return Err(Error::InvalidYaml("timeout_seconds must be an unsigned YAML integer".into()));
+        if !matches!(
+            get("timeout_seconds"),
+            Some(serde_yaml_ng::Value::Number(n)) if n.as_u64().is_some()
+        ) {
+            return Err(Error::InvalidYaml(
+                "timeout_seconds must be an unsigned YAML integer".into(),
+            ));
         }
         if !matches!(get("cwd"), Some(serde_yaml_ng::Value::String(_))) {
             return Err(Error::InvalidYaml("cwd must be a YAML string".into()));
@@ -167,7 +175,16 @@ pub fn construct(
 mod tests {
     use super::*;
     fn good() -> &'static str {
-        "schema: 2\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 60\ncommands:\n  - 'printf one'\n  - 'printf two'\n"
+        concat!(
+            "schema: 2\n",
+            "shell: fish\n",
+            "cwd: /tmp\n",
+            "privilege: none\n",
+            "timeout_seconds: 60\n",
+            "commands:\n",
+            "  - 'printf one'\n",
+            "  - 'printf two'\n",
+        )
     }
 
     #[test]
@@ -206,7 +223,10 @@ mod tests {
             good().replace("  - 'printf two'", "  - 42"),
             good().replace("  - 'printf two'", "  - ''"),
             good().replace("  - 'printf two'", "  - null"),
-            good().replace("  - 'printf two'", "  - 'printf two'\n  - 'printf three'\ncommand: forbidden"),
+            good().replace(
+                "  - 'printf two'",
+                "  - 'printf two'\n  - 'printf three'\ncommand: forbidden",
+            ),
             good().replace("shell: fish", "shell: unknown"),
             good().replace("cwd: /tmp", "cwd: ../tmp"),
             good().replace("commands:", "commands: &steps"),
@@ -214,7 +234,14 @@ mod tests {
         ] {
             assert!(Validator::parse(&bad).is_err(), "unexpected acceptance: {bad}");
         }
-        let legacy = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 60\ncommand: printf ok\n";
+        let legacy = concat!(
+            "schema: 1\n",
+            "shell: fish\n",
+            "cwd: /tmp\n",
+            "privilege: none\n",
+            "timeout_seconds: 60\n",
+            "command: printf ok\n",
+        );
         assert!(crate::v1::Validator::parse(legacy).is_ok());
         assert!(Validator::parse(legacy).is_err());
     }
