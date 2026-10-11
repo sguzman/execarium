@@ -9,12 +9,13 @@
 //! ## Example
 //!
 //! ```
-//! let yaml = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n";
+//! let yaml = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
 //! let job = execarium::parse(yaml).unwrap();
 //! assert_eq!(job.schema(), 1);
 //! assert_eq!(job.shell(), execarium::Shell::Fish);
 //! assert_eq!(job.privilege(), execarium::Privilege::None);
 //! assert_eq!(job.cwd(), "/tmp");
+//! assert_eq!(job.timeout_seconds(), 600);
 //! assert_eq!(job.command(), "echo ok");
 //! ```
 
@@ -30,6 +31,10 @@ pub const MAX_DOCUMENT_BYTES: usize = 256 * 1024;
 pub const MAX_COMMAND_BYTES: usize = 128 * 1024;
 /// Maximum UTF-8 byte length of the literal working directory path.
 pub const MAX_CWD_BYTES: usize = 4096;
+/// Minimum allowed execution-time deadline (one second).
+pub const MIN_TIMEOUT_SECONDS: u64 = 1;
+/// Maximum allowed execution-time deadline (seven days).
+pub const MAX_TIMEOUT_SECONDS: u64 = 7 * 24 * 60 * 60;
 
 /// The requested local shell *label*. Availability and permission to invoke
 /// that shell are the consumer's responsibility.
@@ -92,6 +97,7 @@ pub struct Job {
     shell: Shell,
     cwd: String,
     privilege: Privilege,
+    timeout_seconds: u64,
     command: String,
 }
 
@@ -107,6 +113,11 @@ impl Job {
     }
     pub const fn privilege(&self) -> Privilege {
         self.privilege
+    }
+    /// Requested maximum running time, excluding queue and approval waits.
+    /// Enforcement is the responsibility of the consuming executor.
+    pub const fn timeout_seconds(&self) -> u64 {
+        self.timeout_seconds
     }
     pub fn command(&self) -> &str {
         &self.command
@@ -126,6 +137,8 @@ pub enum Error {
     UnsupportedSchema(u64),
     #[error("invalid working directory: {0}")]
     InvalidCwd(&'static str),
+    #[error("invalid timeout: {0}")]
+    InvalidTimeout(&'static str),
     #[error("invalid command: {0}")]
     InvalidCommand(&'static str),
 }
@@ -139,6 +152,7 @@ struct RawJob {
     shell: Shell,
     cwd: String,
     privilege: Privilege,
+    timeout_seconds: u64,
     command: String,
 }
 
@@ -177,7 +191,7 @@ fn reject_unsupported_yaml_features(input: &str) -> Result<(), Error> {
 
 /// Parse one strict v1 document. This function only handles data.
 ///
-/// * All five fields are mandatory; extra and duplicate fields are errors.
+/// * All six fields are mandatory; extra and duplicate fields are errors.
 /// * There are no defaults, expressions, environment interpolation or
 ///   filesystem checks.
 /// * `privilege` is a requested mode, **not an authorization**.
@@ -205,6 +219,14 @@ pub fn parse(input: &str) -> Result<Job, Error> {
                 }
             }
         }
+        // Do not accept "300", 300.0, booleans, or null as an integer.
+        if let Some(value) = mapping.get(serde_yaml_ng::Value::String("timeout_seconds".into())) {
+            if !matches!(value, serde_yaml_ng::Value::Number(n) if n.as_u64().is_some()) {
+                return Err(Error::InvalidYaml(
+                    "field timeout_seconds must be an unsigned YAML integer".into(),
+                ));
+            }
+        }
     }
     let raw: RawJob =
         serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
@@ -226,6 +248,9 @@ pub fn parse(input: &str) -> Result<Job, Error> {
             "dot and parent-directory segments are not allowed",
         ));
     }
+    if !(MIN_TIMEOUT_SECONDS..=MAX_TIMEOUT_SECONDS).contains(&raw.timeout_seconds) {
+        return Err(Error::InvalidTimeout("must be between 1 and 604800 seconds"));
+    }
     if raw.command.trim().is_empty() {
         return Err(Error::InvalidCommand(
             "must not be empty or whitespace only",
@@ -243,6 +268,7 @@ pub fn parse(input: &str) -> Result<Job, Error> {
         shell: raw.shell,
         cwd: raw.cwd,
         privilege: raw.privilege,
+        timeout_seconds: raw.timeout_seconds,
         command: raw.command,
     })
 }

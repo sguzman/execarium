@@ -7,7 +7,7 @@ multiple projects can consume. Work here, not in Jobflick, until the v1
 contract is settled.
 
 * [x] Repository bootstrap and independent project identity
-* [x] Document `schema: 1` with all five required fields
+* [x] Document draft `schema: 1` with all six required fields
 * [x] Rust parsing/validation library, no process execution
 * [x] Validation-only CLI
 * [x] Strictness, security and conformance documentation
@@ -20,7 +20,10 @@ contract is settled.
 
 * Format is project-neutral: `schema: 1`, not `jobflick: 1`.
 * Only local shell job description; no `executor` key.
-* Five required fields: `schema`, `shell`, `cwd`, `privilege`, `command`.
+* Six required fields: `schema`, `shell`, `cwd`, `privilege`,
+  `timeout_seconds`, `command`.
+* `timeout_seconds`: exact integer 1–604800, measured from execution start;
+  each consumer enforces its runtime limit, not the parser.
 * Shell enum includes Fish, Bash and POSIX sh as descriptions; not all
   consumers are required to implement every dialect.
 * Privilege enum is `none`/`sudo`/`doas`; none grants authority.
@@ -34,7 +37,8 @@ contract is settled.
 * Docker, Podman, jails, container orchestration.
 * Firecracker, microVMs, hypervisors or VMs.
 * Remote machines, SSH, GitHub Actions, GitLab CI, cloud runners.
-* Dependencies, DAGs, retries, priorities, cron, resources or quotas in YAML.
+* Dependencies, DAGs, retries, priorities, cron, additional resources
+  (CPU/memory) or quotas in YAML.
 * Credential stores, password prompts, approval HUDs, privilege escalation.
 * Shell execution of any kind inside the Execarium library or CLI.
 * Altering the Jobflick repository, systemd, Hyprland, or user workstation.
@@ -52,6 +56,7 @@ trusted OS channel.
 * Should path syntax tighten in a future version (e.g., repeated separators)?
 * Does a future v2 need separate command arguments or environment variables?
 
-Changes to schema 1's meaning require deliberate review. Incompatible or
-additional semantics should become a new schema version rather than altering
-the interpretation of existing documents.
+This explicit timeout amendment revises the **unreleased draft** of schema 1.
+The earlier five-field draft is rejected; there is no tagged release to
+migrate. Once v1 is declared stable, incompatible additions require a new
+schema version rather than changing existing documents.

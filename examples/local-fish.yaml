@@ -3,4 +3,5 @@ schema: 1
 shell: fish
 cwd: /home/user/Projects/example
 privilege: none
+timeout_seconds: 600
 command: cargo test

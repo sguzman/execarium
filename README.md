@@ -17,10 +17,11 @@ schema: 1
 shell: fish
 cwd: /home/user/Projects/example
 privilege: none
+timeout_seconds: 600
 command: cargo test
 ```
 
-All five fields are **required**. There are no implicit defaults, extension fields,
+All six fields are **required**. There are no implicit defaults, extension fields,
 environment expansion, or execution backends in schema v1.
 
 | Field | v1 type / accepted value | Meaning |
@@ -29,6 +30,7 @@ environment expansion, or execution backends in schema v1.
 | `shell` | `fish`, `bash`, `sh` | Requested local shell (not automatically launched) |
 | `cwd` | Absolute POSIX directory path | Requested working directory, validated lexically only |
 | `privilege` | `none`, `sudo`, `doas` | Requested privilege **metadata**, not authorization |
+| `timeout_seconds` | Integer, 1–604800 | Maximum elapsed execution time, **not** queue/approval waiting time |
 | `command` | Nonempty UTF-8 string | Literal shell source, no parsing or execution by Execarium |
 
 Multiline commands use ordinary YAML block scalars:
@@ -38,6 +40,7 @@ schema: 1
 shell: fish
 cwd: /home/user/Projects/example
 privilege: none
+timeout_seconds: 600
 command: |
   cargo fmt --check
   and cargo test
@@ -54,7 +57,10 @@ and the [roadmap](docs/ROADMAP.md).
 safe, grant privilege, verify passwords, schedule work, inspect the filesystem,
 or run a shell. `privilege: none` is a request, **not a sandbox**: the contained
 shell text can still include `sudo` or `doas`. Consumers are responsible for
-policy, human authorization, authentication, and actual execution.
+policy, human authorization, authentication, timeouts, and actual execution.
+`timeout_seconds` is a requested limit, not a timer implemented by the library.
+A consumer must enforce it at runtime or reject the job; the library neither
+spawns nor terminates processes.
 
 For v1, consumers must not silently select or infer a remote/container/VM backend.
 There is deliberately no `executor` field: a shell is assumed to be local by the
@@ -76,9 +82,10 @@ execarium = { git = "https://github.com/sguzman/execarium", rev = "<reviewed-com
 ```rust
 use execarium::parse;
 
-let job = parse("schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n")?;
+let job = parse("schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n")?;
 assert_eq!(job.schema(), 1);
 assert_eq!(job.command(), "echo ok");
+assert_eq!(job.timeout_seconds(), 600);
 // This parses data. It does not start a process or approve the command.
 # Ok::<(), execarium::Error>(())
 ```
@@ -94,8 +101,9 @@ cargo run -- validate examples/local-fish.yaml
 cargo run -- validate - < examples/multiline-fish.yaml
 ```
 
-A successful validation exits 0 and prints the schema, shell, and requested
-privilege *without printing command text*. Invalid documents exit nonzero.
+A successful validation exits 0 and prints the schema, shell, requested
+privilege, and execution timeout *without printing command text*.
+Invalid documents exit nonzero.
 
 ## Development
 
@@ -110,7 +118,9 @@ The CI workflow runs those checks and tests valid and invalid fixtures.
 
 ## Rules for evolving the format
 
-1. **Version first:** incompatible changes require a new `schema` integer.
+1. **Version first:** after the first stable v1 release, incompatible changes
+   require a new `schema` integer. Draft v1 was explicitly revised to add
+   `timeout_seconds` before any release/tag.
 2. **Fail closed:** unknown keys, duplicate keys, unsupported versions and malformed
    YAML are errors; no silent coercions.
 3. **No accidental authority:** parsing is never consent to execution; privilege
@@ -124,7 +134,8 @@ The CI workflow runs those checks and tests valid and invalid fixtures.
 
 Automatic clipboard collection, auto-enqueue, container/jail/Docker/Podman,
 microVM/Firecracker, remote execution, SSH and CI runners, dependencies,
-resource limits, and rich authorization workflows are **not v1 work**.
+general resource budgets (CPU/memory), and rich authorization workflows are
+**not v1 work**. The execution-duration limit is the sole v1 resource bound.
 
 ## License
 

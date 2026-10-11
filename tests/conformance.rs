@@ -1,9 +1,9 @@
 use execarium::{
     parse, validate, Error, Privilege, Shell, MAX_COMMAND_BYTES, MAX_CWD_BYTES, MAX_DOCUMENT_BYTES,
-    SCHEMA_VERSION,
+    MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS, SCHEMA_VERSION,
 };
 
-const MINIMAL: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ncommand: echo ok\n";
+const MINIMAL: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
 
 fn reject(yaml: &str) {
     assert!(parse(yaml).is_err(), "unexpected acceptance of: {yaml:?}");
@@ -17,6 +17,7 @@ fn accepts_all_example_documents_without_executing_anything() {
     assert_eq!(local.cwd(), "/home/user/Projects/example");
     assert_eq!(local.privilege(), Privilege::None);
     assert_eq!(local.command(), "cargo test");
+    assert_eq!(local.timeout_seconds(), 600);
 
     let multi = parse(include_str!("../examples/multiline-fish.yaml")).unwrap();
     assert_eq!(
@@ -27,6 +28,7 @@ fn accepts_all_example_documents_without_executing_anything() {
     let elevated = parse(include_str!("../examples/privileged-doas.yaml")).unwrap();
     assert_eq!(elevated.privilege(), Privilege::Doas);
     assert_eq!(elevated.command(), "pacman -Syu");
+    assert_eq!(elevated.timeout_seconds(), 3600);
     assert!(validate(MINIMAL).is_ok());
 }
 
@@ -57,7 +59,7 @@ fn versions_must_be_explicit_exact_integer_one() {
 
 #[test]
 fn missing_duplicate_and_unknown_keys_fail_closed() {
-    for key in ["schema", "shell", "cwd", "privilege", "command"] {
+    for key in ["schema", "shell", "cwd", "privilege", "timeout_seconds", "command"] {
         let filtered = MINIMAL
             .lines()
             .filter(|line| !line.starts_with(&format!("{key}:")))
@@ -67,6 +69,7 @@ fn missing_duplicate_and_unknown_keys_fail_closed() {
     }
     reject(&format!("{MINIMAL}shell: bash\n"));
     reject(&format!("{MINIMAL}command: echo second\n"));
+    reject(&format!("{MINIMAL}timeout_seconds: 60\n"));
     reject(&format!("{MINIMAL}executor: local\n"));
     reject(&format!("{MINIMAL}run_as: root\n"));
 }
@@ -148,4 +151,19 @@ fn parser_never_performs_filesystem_validation_or_execution() {
     assert_eq!(job.command(), "echo ok");
     // This test deliberately performs no file/process operations: parse is
     // a data operation, not consent to execute this request.
+}
+
+#[test]
+fn timeout_is_required_exact_unsigned_integer_and_bounded() {
+    for seconds in [MIN_TIMEOUT_SECONDS, 60, MAX_TIMEOUT_SECONDS] {
+        let yaml = MINIMAL.replace("timeout_seconds: 600", &format!("timeout_seconds: {seconds}"));
+        assert_eq!(parse(&yaml).unwrap().timeout_seconds(), seconds);
+    }
+    for invalid in ["0", "604801", "-1", "1.5", "\"60\"", "true", "null", "[]", "{}"] {
+        reject(&MINIMAL.replace("timeout_seconds: 600", &format!("timeout_seconds: {invalid}")));
+    }
+    let err = parse(&MINIMAL.replace("timeout_seconds: 600", "timeout_seconds: 0")).unwrap_err();
+    assert!(matches!(err, Error::InvalidTimeout(_)));
+    let err = parse(&MINIMAL.replace("timeout_seconds: 600", "timeout_seconds: 604801")).unwrap_err();
+    assert!(matches!(err, Error::InvalidTimeout(_)));
 }

@@ -12,17 +12,19 @@ An attacker may control an entire YAML document. They may attempt to:
 * exhaust CPU or memory with giant YAML inputs;
 * supply a working directory that points to untrusted or sensitive resources;
 * assert `privilege: none` while embedding `sudo` in `command`;
+* request a timeout the consuming executor does not honor;
 * trick a consumer into using automatic acceptance or silently overriding its
   configured shell and authorization policy.
 
 ### What Execarium does
 
 * Limits the entire document and each command before retaining unbounded data.
-* Requires a fixed set of five keys and exact schema version.
+* Requires a fixed set of six keys and exact schema version.
 * Rejects tags/aliases/anchors/directives, unknown keys, duplicate keys, bad
   field types, invalid enum values, and malformed inputs.
 * Rejects relative directories, parent-directory path segments, line breaks,
   and embedded NUL in `cwd`.
+* Validates `timeout_seconds` as an exact integer between 1 and 604800.
 * Produces typed immutable-accessor data instead of executing a shell.
 * Never reads clipboard data, polls changes, launches a daemon, or transmits
   information over the network.
@@ -39,6 +41,8 @@ shell command syntax or perform a safety assessment.
 * Encrypt or hide commands, passwords, command output, or filesystem paths.
 * Require human approval or authenticate via `sudo` / `doas`.
 * Prevent a separate application from reading a clipboard or launching a job.
+* Enforce or guarantee the requested timeout, kill detached descendants, or
+  undo side effects produced before the timeout.
 
 ## Required responsibilities of a consuming executor
 
@@ -54,8 +58,12 @@ shell command syntax or perform a safety assessment.
    valid while queued.
 5. **No silent substitutions:** Unsupported shell or privilege modes must be
    rejected or remain held; never downgrade or upgrade them implicitly.
-6. **Process policy:** Apply external resource limits, timeouts, isolation, and
-   cancellation as appropriate. A parser alone cannot confine a shell.
+6. **Process policy:** Enforce the requested `timeout_seconds` as an elapsed
+   execution-time limit using a monotonic clock; start the timer at process
+   launch (not at submission or authorization). Reject unsupported limits,
+   record expiration distinctly, terminate and reap owned processes, and
+   apply additional isolation/cancellation rules as appropriate. A parser
+   cannot confine a shell or ensure detached processes terminate.
 7. **Observability:** Distinguish rejected jobs, pending approval, queued work,
    running work, and uncertain crash recovery outcomes.
 8. **Secret hygiene:** Treat even ordinary shell text and error messages as

@@ -10,6 +10,7 @@ The reference parser MUST accept:
 * In-memory documents using Bash or POSIX sh enum values.
 * Quoted literal shell operators `!`, `&`, and `*` (not YAML tags/aliases).
 * Comments, arbitrary key order, a single optional `---`, and Unicode text.
+* Integer `timeout_seconds` boundaries 1 and 604800, and intermediate values.
 
 ## Rejected documents
 
@@ -21,6 +22,9 @@ The reference parser MUST accept:
 | `schema: 2`, `schema: 0` | Unsupported schema |
 | Quoted `schema: "1"`, null or boolean schema | Type error |
 | Unknown shell or privilege mode | Error |
+| Missing or duplicate `timeout_seconds` | Error |
+| `timeout_seconds: 0`, `604801`, negative integers | Error |
+| Quoted, fractional, boolean, null, list or mapping timeout | Error |
 | Nonmapping document or a YAML sequence | Error |
 | Multiple documents separated by `---` | Error |
 | YAML anchor, alias, tag or directive | Error |
@@ -50,7 +54,7 @@ cargo run -- validate examples/privileged-doas.yaml
 
 CLI smoke tests in `.github/workflows/ci.yml` assert the expected acceptance
 and rejection behavior for file input and stdin. The test suite exercises each
-field, key strictness, YAML indirection, and byte limits.
+field, key strictness, YAML indirection, timeout integer boundaries, and byte limits.
 
 ## Test scope and limitations
 

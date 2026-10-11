@@ -32,7 +32,7 @@ other Execarium consumers.
 
 ## D5 — Version and field strictness
 
-**Decision:** All five keys mandatory, exact `schema: 1`, no unknown fields,
+**Decision:** All six keys mandatory, exact `schema: 1`, no unknown fields,
 no silent migrations, no aliases/tags, bounded input size.
 **Reason:** Consumers need a stable, independently reviewable contract with
 predictable interpretation. Unknown features fail closed.
@@ -48,3 +48,20 @@ authorization and any application's execution policy.
 **Decision:** Future Execarium ingestion adds a separate explicit structured
 input path in Jobflick rather than silently replacing raw Fish submission.
 **Reason:** Avoid breaking the existing mature queue and its users.
+
+## D8 — Required bounded execution timeout (draft v1 amendment)
+
+**Decision:** Require `timeout_seconds` as a positive integer (1–604800),
+representing the maximum running time after the shell is launched. Exclude
+queue waiting, pending user approval, and OS authentication from this duration.
+There is no implicit or unlimited timeout.
+
+**Reason:** Every consumer should receive an explicit, machine-checkable
+execution-duration request without conflating it with user approval or scheduler
+waiting time. The parser validates only; the consumer must enforce or reject
+the request and report expiry as a distinct outcome.
+
+**Version note:** This change explicitly amends the **unreleased draft** of
+schema 1; it is not a silent change to a stable format. Earlier five-key
+drafts are intentionally rejected. After schema 1 is released, similar
+breaking changes must bump the schema version.

@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           cargo build --quiet
           for example in examples/*.yaml; do
-            ./target/debug/execarium validate "$example" | grep -q 'Valid Execarium schema 1'
+            ./target/debug/execarium validate "$example" | grep -q 'Valid Execarium schema 1.*timeout_seconds='
           done
           ./target/debug/execarium validate - < examples/multiline-fish.yaml | grep -q 'Valid Execarium schema 1'
       - name: CLI rejects unsupported input without executing it
@@ -41,6 +41,7 @@ jobs:
           shell: fish
           cwd: /tmp
           privilege: none
+          timeout_seconds: 600
           command: echo not-run
           executor: local
           EOF
@@ -54,6 +55,7 @@ jobs:
           shell: bash
           cwd: /tmp
           privilege: none
+          timeout_seconds: 600
           command: echo not-run
           EOF
           if ./target/debug/execarium validate "$root/duplicate.yaml"; then
@@ -65,10 +67,23 @@ jobs:
           shell: fish
           cwd: /tmp
           privilege: none
+          timeout_seconds: 600
           command: echo not-run
           EOF
           if ./target/debug/execarium validate "$root/unsupported.yaml"; then
             echo 'unsupported schema should have been rejected' >&2
+            exit 1
+          fi
+          cat > "$root/invalid-timeout.yaml" <<'EOF'
+          schema: 1
+          shell: fish
+          cwd: /tmp
+          privilege: none
+          timeout_seconds: 0
+          command: echo not-run
+          EOF
+          if ./target/debug/execarium validate "$root/invalid-timeout.yaml"; then
+            echo 'zero timeout should have been rejected' >&2
             exit 1
           fi
           test ! -e "$root/not-run"

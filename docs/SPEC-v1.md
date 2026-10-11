@@ -10,7 +10,8 @@ normative in this document.
 ## 1. Scope
 
 Schema 1 describes a *single local shell command* and its associated working
-directory, shell dialect, and requested privilege mode. There is **no**
+directory, shell dialect, requested privilege mode, and execution-duration
+limit. There is **no**
 executor/backend selector. The format has no concept of a remote target,
 container, VM, dependencies, resources, triggers, clipboard events, or secrets.
 
@@ -25,10 +26,11 @@ schema: 1
 shell: fish
 cwd: /home/user/Projects/example
 privilege: none
+timeout_seconds: 600
 command: cargo test
 ```
 
-All five keys are **required**, appear exactly once, and have no defaults. Key
+All six keys are **required**, appear exactly once, and have no defaults. Key
 ordering is not significant. Additional keys are invalid. The top level MUST
 be one YAML mapping, not a sequence or scalar.
 
@@ -85,6 +87,27 @@ solely from a YAML document.
 A future Jobflick integration may hold privileged jobs for explicit review and
 out-of-band authentication. That is *not* a schema 1 parser feature.
 
+### `timeout_seconds` — unsigned integer
+
+The maximum **elapsed wall-clock running time** requested for the local shell
+job, in **whole seconds**. It MUST be an unquoted YAML integer in the inclusive
+range **1–604800** (seven days). Zero, negative integers, fractions,
+floating-point values, strings (including `"60"`), booleans, and null are
+invalid. No default or unlimited sentinel exists in schema 1.
+
+The requested timeout starts **when the shell process is launched**. Time
+spent waiting in a queue, waiting for human approval, or waiting for OS
+authentication does not count. A consumer MUST enforce the limit with its
+own runtime/process supervision, or **reject the job** if it cannot. It MAY
+apply a stricter documented policy by rejecting the request; it MUST NOT
+silently change its timeout. On expiration, the consumer SHOULD terminate
+the job's process group, reap processes it owns, and report a distinct timeout
+outcome. A requested timeout does not guarantee that detached descendants or
+external side effects can be stopped.
+
+**Execarium only validates and returns the timeout.** It does not start a timer,
+kill processes, or guarantee that another application will enforce the limit.
+
 ### `command` — UTF-8 string
 
 Nonempty after trimming whitespace, with a maximum of 131072 UTF-8 bytes
@@ -102,6 +125,7 @@ schema: 1
 shell: fish
 cwd: /home/user/Projects/example
 privilege: none
+timeout_seconds: 600
 command: |
   cargo fmt --check
   and cargo test
@@ -120,6 +144,8 @@ command: |
 * YAML comments and ordinary quoted scalars are allowed.
 * Numeric, boolean, null, sequence, or mapping values are invalid for string
   fields even if a shell or YAML implementation could coerce them.
+* `timeout_seconds` MUST be a YAML unsigned integer in range, never a
+  coerced string or floating-point scalar.
 * Successful parse returns a typed job description and **has no side effects**.
 
 YAML has scalar inference and quoting rules. Producers SHOULD quote ambiguous
@@ -132,7 +158,7 @@ or unknown-field tolerance and call the result conformant.
 ## 5. Validation versus execution
 
 A conforming parser validates **shape, types, enumeration values, byte limits,
-and lexical path constraints only**. Successful parsing is not evidence that
+lexical path constraints, and the requested timeout bound only**. Successful parsing is not evidence that
 the command is safe, meaningful, runnable, syntactically valid for the chosen
 shell, authorized, or guaranteed to finish. The consumer MUST explicitly choose
 an execution policy and enforce it independently of this document.
@@ -146,6 +172,11 @@ Consumers SHOULD pin a reviewed parser revision and MUST explicitly allow
 supported schema versions. Unknown versions are rejected by default. Schema 1
 will not acquire new required or optional keys by silent interpretation:
 materially different semantics belong in a new schema version.
+
+**Pre-release draft amendment:** `timeout_seconds` was deliberately added as a
+sixth required field while schema 1 was still an unpublished draft. Earlier
+five-field drafts are not compatible and are now rejected. Once schema 1 is
+tagged stable, any breaking addition must instead use a new schema version.
 
 ## 7. Compatibility checklist
 

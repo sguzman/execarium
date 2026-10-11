@@ -33,10 +33,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
     let job = execarium::parse(&document)?;
     println!(
-        "Valid Execarium schema {} (shell={}, privilege={})",
+        "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={})",
         job.schema(),
         job.shell(),
-        job.privilege()
+        job.privilege(),
+        job.timeout_seconds()
     );
     Ok(())
 }
