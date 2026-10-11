@@ -1,0 +1,9 @@
+schema: 2
+shell: fish
+cwd: /tmp
+privilege: none
+timeout_seconds: 120
+commands:
+  - echo first
+  - echo second
+  - echo third
