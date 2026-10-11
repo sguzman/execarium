@@ -19,12 +19,24 @@ pub struct Job {
 }
 
 impl Job {
-    pub const fn schema(&self) -> u64 { self.schema }
-    pub const fn shell(&self) -> Shell { self.shell }
-    pub fn cwd(&self) -> &str { &self.cwd }
-    pub const fn privilege(&self) -> Privilege { self.privilege }
-    pub const fn timeout_seconds(&self) -> u64 { self.timeout_seconds }
-    pub fn commands(&self) -> &[String] { &self.commands }
+    pub const fn schema(&self) -> u64 {
+        self.schema
+    }
+    pub const fn shell(&self) -> Shell {
+        self.shell
+    }
+    pub fn cwd(&self) -> &str {
+        &self.cwd
+    }
+    pub const fn privilege(&self) -> Privilege {
+        self.privilege
+    }
+    pub const fn timeout_seconds(&self) -> u64 {
+        self.timeout_seconds
+    }
+    pub fn commands(&self) -> &[String] {
+        &self.commands
+    }
     pub fn to_yaml(&self) -> Result<String, Error> {
         serde_yaml_ng::to_string(self).map_err(|e| Error::InvalidYaml(e.to_string()))
     }
@@ -53,7 +65,10 @@ fn checked(raw: RawJob) -> Result<Job, Error> {
         // Schema 1 and 2 share exact command, cwd and timeout field bounds.
         // This construct operation only validates and never executes.
         crate::v1::Validator::construct(
-            raw.shell, raw.cwd.as_str(), raw.privilege, raw.timeout_seconds,
+            raw.shell,
+            raw.cwd.as_str(),
+            raw.privilege,
+            raw.timeout_seconds,
             command.as_str(),
         )?;
         total_bytes = total_bytes.saturating_add(command.len());
@@ -81,9 +96,9 @@ impl Validator {
         crate::reject_unsupported_yaml_features(input)?;
         let generic: serde_yaml_ng::Value =
             serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
-        let mapping = generic.as_mapping().ok_or_else(|| {
-            Error::InvalidYaml("top level must be a YAML mapping".into())
-        })?;
+        let mapping = generic
+            .as_mapping()
+            .ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
         let get = |key: &str| mapping.get(serde_yaml_ng::Value::String(key.to_owned()));
         if !matches!(get("schema"), Some(serde_yaml_ng::Value::Number(n)) if n.as_u64() == Some(SCHEMA)) {
             return Err(Error::InvalidYaml("schema must be the YAML integer 2".into()));
@@ -118,15 +133,26 @@ impl Validator {
         commands: Vec<String>,
     ) -> Result<Job, Error> {
         checked(RawJob {
-            schema: SCHEMA, shell, cwd: cwd.into(), privilege, timeout_seconds, commands,
+            schema: SCHEMA,
+            shell,
+            cwd: cwd.into(),
+            privilege,
+            timeout_seconds,
+            commands,
         })
     }
 
-    pub fn render(job: &Job) -> Result<String, Error> { job.to_yaml() }
+    pub fn render(job: &Job) -> Result<String, Error> {
+        job.to_yaml()
+    }
 }
 
-pub fn parse(input: &str) -> Result<Job, Error> { Validator::parse(input) }
-pub fn validate(input: &str) -> Result<(), Error> { Validator::validate(input) }
+pub fn parse(input: &str) -> Result<Job, Error> {
+    Validator::parse(input)
+}
+pub fn validate(input: &str) -> Result<(), Error> {
+    Validator::validate(input)
+}
 pub fn construct(
     shell: Shell,
     cwd: impl Into<String>,
@@ -148,11 +174,23 @@ mod tests {
     fn strict_valid_sequence_round_trip() {
         let job = Validator::parse(good()).unwrap();
         assert_eq!(job.schema(), 2);
-        assert_eq!(job.commands(), &["printf one", "printf two"]);
-        assert_eq!(Validator::parse(&Validator::render(&job).unwrap()).unwrap(), job);
         assert_eq!(
-            Validator::construct(Shell::Fish, "/tmp", Privilege::None, 60,
-                vec!["printf one".into(), "printf two".into()]).unwrap(),
+            job.commands().iter().map(String::as_str).collect::<Vec<_>>(),
+            vec!["printf one", "printf two"]
+        );
+        assert_eq!(
+            Validator::parse(&Validator::render(&job).unwrap()).unwrap(),
+            job
+        );
+        assert_eq!(
+            Validator::construct(
+                Shell::Fish,
+                "/tmp",
+                Privilege::None,
+                60,
+                vec!["printf one".into(), "printf two".into()],
+            )
+            .unwrap(),
             job
         );
     }
@@ -187,7 +225,12 @@ mod tests {
         assert!(Validator::construct(Shell::Fish, "/", Privilege::None, 60, big).is_err());
         assert!(Validator::construct(Shell::Fish, "/", Privilege::None, 60, vec![]).is_err());
         assert!(Validator::construct(
-            Shell::Fish, "/", Privilege::None, 60, vec!["echo x".into(); MAX_STEPS + 1]
-        ).is_err());
+            Shell::Fish,
+            "/",
+            Privilege::None,
+            60,
+            vec!["echo x".into(); MAX_STEPS + 1]
+        )
+        .is_err());
     }
 }
