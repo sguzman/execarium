@@ -41,6 +41,19 @@ jobs:
             ./target/debug/execarium validate "$example" | grep -q 'Valid Execarium schema 1.*timeout_seconds='
           done
           ./target/debug/execarium validate - < examples/multiline-fish.yaml | grep -q 'Valid Execarium schema 1'
+      - name: Portable schema-1 fixture corpus matches CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          for yaml in tests/fixtures/v1/valid/*.yaml; do
+            ./target/debug/execarium validate "$yaml" | grep -q 'Valid Execarium schema 1'
+          done
+          for yaml in tests/fixtures/v1/invalid/*.yaml; do
+            if ./target/debug/execarium validate "$yaml"; then
+              echo "Rejected corpus fixture was accepted: $yaml" >&2
+              exit 1
+            fi
+          done
       - name: CLI rejects unsupported input without executing it
         shell: bash
         run: |

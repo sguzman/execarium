@@ -1,0 +1,6 @@
+schema: 1
+shell: fish
+cwd: /tmp
+privilege: root
+timeout_seconds: 600
+command: echo ok

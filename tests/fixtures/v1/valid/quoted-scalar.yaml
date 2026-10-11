@@ -1,0 +1,6 @@
+schema: 1
+shell: sh
+cwd: /tmp
+privilege: none
+timeout_seconds: 42
+command: "null"

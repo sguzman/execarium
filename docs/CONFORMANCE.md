@@ -40,6 +40,23 @@ The reference parser MUST accept:
 Rejected documents MUST NOT launch or enqueue a job (the reference library
 is incapable of either). A validation-only CLI MUST exit nonzero.
 
+## Portable fixture corpus and MVP acceptance
+
+`tests/fixtures/v1/valid/` contains **six** independently loadable
+conforming schema-1 YAML documents. `tests/fixtures/v1/invalid/` contains
+**fourteen** documents that every conforming validator MUST reject. The
+`tests/conformance_corpus.rs` test verifies both sets through the public
+`v1::Validator` API, and CI also checks them through the actual CLI.
+
+The larger `tests/mvp_acceptance.rs` suite covers field mutations, timeout
+and length boundaries, all 54 enum/timeout combinations, 2,000 fixed-seed
+construction/render/parse round trips, and 3,000 malformed-input robustness
+cases. `tests/cli_acceptance.rs` tests real subprocess exit codes, stdin,
+files, invalid UTF-8, input size limits and absence of command execution.
+
+For the release gate and limits of what is verified, see
+[MVP-ACCEPTANCE.md](MVP-ACCEPTANCE.md).
+
 ## Running checks
 
 ```sh

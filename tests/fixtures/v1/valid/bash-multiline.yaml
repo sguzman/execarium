@@ -1,0 +1,10 @@
+# shell source is one script, not a command list
+schema: 1
+shell: bash
+cwd: /workspace
+privilege: none
+timeout_seconds: 7200
+command: |
+  set -e
+  cargo fmt --check
+  cargo test

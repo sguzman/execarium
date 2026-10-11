@@ -1,0 +1,6 @@
+schema: 1
+shell: sh
+cwd: /
+privilege: doas
+timeout_seconds: 604800
+command: "echo require-human-approval"

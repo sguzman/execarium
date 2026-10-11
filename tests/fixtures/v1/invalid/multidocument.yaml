@@ -1,0 +1,13 @@
+schema: 1
+shell: fish
+cwd: /tmp
+privilege: none
+timeout_seconds: 600
+command: echo ok
+---
+schema: 1
+shell: bash
+cwd: /tmp
+privilege: none
+timeout_seconds: 600
+command: echo ok
