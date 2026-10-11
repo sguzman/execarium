@@ -4,6 +4,18 @@ All notable releases are documented here. Rust implementation releases follow
 Semantic Versioning **independently** of the YAML schema integer; see
 [VERSIONING.md](docs/VERSIONING.md).
 
+## [1.2.0] — 2026-10-11
+
+**Backwards-compatible Rust API addition: new independent YAML schema 2.**
+
+* Add strict `v2::Validator` with a `commands:` sequence of 1–256 shell steps,
+  stop-on-first-failure consumer semantics, and one overall execution timeout.
+* Add explicit `parse_document` multi-version dispatch; preserve the existing
+  `v1::Validator`, `parse`, `construct`, and `parse_for_schema` APIs.
+* Extend validation-only CLI to recognize schema 1 and schema 2 documents.
+* Document normative v2 semantics and keep frozen schema 1 unchanged.
+* No execution, clipboard monitoring or privilege authorization in Execarium.
+
 ## [1.1.2] — 2026-10-11
 
 **Independent versioning policy; YAML schema 1 unchanged.**
