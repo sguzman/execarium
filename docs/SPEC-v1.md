@@ -1,6 +1,7 @@
 # Execarium schema 1: normative specification
 
-**Status:** first implementation, under review. **Schema version:** integer `1`.
+**Status:** stable **Execarium v1.0.0**. **Wire schema:** integer `1`.
+**Reference crate:** `1.0.0`. Normative schema changes require a new major version.
 
 This document defines the portable wire representation of an Execarium **job
 request**. It is not an executable file format and does not authorize the work
@@ -173,10 +174,12 @@ supported schema versions. Unknown versions are rejected by default. Schema 1
 will not acquire new required or optional keys by silent interpretation:
 materially different semantics belong in a new schema version.
 
-**Pre-release draft amendment:** `timeout_seconds` was deliberately added as a
-sixth required field while schema 1 was still an unpublished draft. Earlier
-five-field drafts are not compatible and are now rejected. Once schema 1 is
-tagged stable, any breaking addition must instead use a new schema version.
+**Release history:** The sixth required field, `timeout_seconds`, was added
+during the pre-release drafting stage. The five-field prototype is not a
+released version and is rejected by the stable v1 parser. Effective with
+`v1.0.0`, schema 1 is frozen: breaking or semantic changes MUST use a new
+integer `schema` and the matching crate major version. Consult
+[VERSIONING.md](VERSIONING.md).
 
 ## 7. Compatibility checklist
 

@@ -23,8 +23,11 @@ use serde::Deserialize;
 use std::fmt;
 use yaml_rust2::scanner::{Scanner, TokenType};
 
-/// The sole supported schema version in this crate release.
+/// The sole supported YAML schema major version in this release.
+/// Crate major version and schema major version MUST match.
 pub const SCHEMA_VERSION: u64 = 1;
+/// Reference implementation version, independent of the YAML `schema` integer.
+pub const IMPLEMENTATION_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Maximum UTF-8 byte length of a complete YAML document.
 pub const MAX_DOCUMENT_BYTES: usize = 256 * 1024;
 /// Maximum UTF-8 byte length of the command source string.

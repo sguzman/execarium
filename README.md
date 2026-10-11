@@ -3,12 +3,25 @@
 **A strict, versioned description of local shell jobs. Not a command runner.**
 
 Execarium defines and validates a small YAML document describing **what shell command
-a consumer is being asked to run**, in which working directory, and with what
-requested privilege level. It is an independent Rust library and a validation-only CLI,
+a consumer is being asked to run**, in which working directory, with what
+requested privilege level and execution timeout. It is an independent Rust library and a validation-only CLI,
 so Jobflick and future projects can share one contract without importing a scheduler.
 
-> **Status:** v1 specification and Rust reference parser, pre-MVP. No execution,
-> clipboard monitoring, background service, privilege escalation, or installation hooks.
+> **Status:** stable **v1.0.0** specification and Rust reference implementation.
+> No execution, clipboard monitoring, background service, privilege escalation,
+> or installation hooks. This repository is not published to crates.io.
+
+## Versions
+
+**Execarium v1.0.0** is the first stable release of YAML **schema 1** and the
+Rust **crate 1.0.0**. The YAML `schema` value deliberately remains the integer
+`1`, not `1.0.0`. Crate **major** version and schema integer are tied;
+crate minor/patch changes may improve the parser/API without changing schema
+1's meaning. Breaking changes to the YAML language require **schema 2** and
+crate **2.x**. No implicit compatibility fallback.
+
+See [versioning policy](docs/VERSIONING.md), [changelog](CHANGELOG.md), and
+[ChatGPT authoring guide](docs/CHATGPT.md).
 
 ## The complete v1 document
 
@@ -72,11 +85,16 @@ deferred until this standalone format has been reviewed and stabilized.
 
 ## Library
 
-Add this repository as a Git dependency until the project is published:
+Use the **Rust library** as an optional reference parser; ChatGPT and other
+producers can generate conforming YAML simply by following the specification.
+The library is not the format's owner.
+
+Add the repository as a Git dependency (the first release is not published
+to crates.io):
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", rev = "<reviewed-commit-sha>" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.0.0" }
 ```
 
 ```rust
@@ -90,13 +108,15 @@ assert_eq!(job.timeout_seconds(), 600);
 # Ok::<(), execarium::Error>(())
 ```
 
-The dependency pin is intentionally a placeholder, not an actual commit SHA.
-Applications should pin a reviewed revision and explicitly restrict accepted
-schema versions.
+This references the immutable release tag. Cargo.lock pins the resolved
+commit for applications; security-sensitive consumers may additionally
+pin an exact reviewed `rev` instead of `tag`. Independently of the crate
+version, consumers should explicitly restrict accepted schema versions.
 
 ## CLI (validation only)
 
 ```sh
+cargo run -- --version
 cargo run -- validate examples/local-fish.yaml
 cargo run -- validate - < examples/multiline-fish.yaml
 ```
@@ -118,9 +138,9 @@ The CI workflow runs those checks and tests valid and invalid fixtures.
 
 ## Rules for evolving the format
 
-1. **Version first:** after the first stable v1 release, incompatible changes
-   require a new `schema` integer. Draft v1 was explicitly revised to add
-   `timeout_seconds` before any release/tag.
+1. **Version first:** schema 1 is now stable. Any changes that make existing
+   YAML incompatible or change semantics require a new integer `schema`
+   version and a matching crate major version.
 2. **Fail closed:** unknown keys, duplicate keys, unsupported versions and malformed
    YAML are errors; no silent coercions.
 3. **No accidental authority:** parsing is never consent to execution; privilege

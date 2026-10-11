@@ -3,6 +3,13 @@ use execarium::{
     MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS, SCHEMA_VERSION,
 };
 
+#[test]
+fn crate_major_version_matches_schema_major_version() {
+    let crate_major: u64 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
+    assert_eq!(crate_major, SCHEMA_VERSION);
+    assert_eq!(execarium::IMPLEMENTATION_VERSION, env!("CARGO_PKG_VERSION"));
+}
+
 const MINIMAL: &str =
     "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
 

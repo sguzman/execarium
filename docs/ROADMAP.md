@@ -1,19 +1,21 @@
 # Scope and roadmap
 
-## Active work: standalone schema v1
+## Status: standalone schema v1.0.0
 
-The immediate goal is a small, independently reviewable specification that
-multiple projects can consume. Work here, not in Jobflick, until the v1
-contract is settled.
+The standalone six-field specification and Rust reference parser are stable
+as v1.0.0. Jobflick is a separate project; integration remains a deliberate,
+separately authorized next step.
 
 * [x] Repository bootstrap and independent project identity
-* [x] Document draft `schema: 1` with all six required fields
+* [x] Document stable `schema: 1` with all six required fields
 * [x] Rust parsing/validation library, no process execution
 * [x] Validation-only CLI
 * [x] Strictness, security and conformance documentation
-* [x] Positive/negative parser tests and CI (subject to CI verification)
-* [ ] Review v1 contract and settle unresolved policy questions
-* [ ] Declare v1 stable and tag a first release after verification
+* [x] Positive/negative parser tests and CI
+* [x] Accept v1.0.0 as the stable six-field baseline
+* [x] Align crate 1.0.0 with schema 1
+* [x] Add versioning policy, release history and AI authoring instructions
+* [x] Configure CI to publish the immutable v1.0.0 tag after verification
 * [ ] Resume Jobflick and integrate structured submission **explicitly**
 
 ## Settled v1 decisions
@@ -56,7 +58,7 @@ trusted OS channel.
 * Should path syntax tighten in a future version (e.g., repeated separators)?
 * Does a future v2 need separate command arguments or environment variables?
 
-This explicit timeout amendment revises the **unreleased draft** of schema 1.
-The earlier five-field draft is rejected; there is no tagged release to
-migrate. Once v1 is declared stable, incompatible additions require a new
-schema version rather than changing existing documents.
+The timeout addition occurred in the **unreleased prototype**, and the
+earlier five-field draft is intentionally rejected. Version 1.0.0 freezes
+the six-field contract. Future incompatible changes require a new schema
+integer and matching Rust crate major version. See [VERSIONING.md](VERSIONING.md).

@@ -65,3 +65,16 @@ the request and report expiry as a distinct outcome.
 schema 1; it is not a silent change to a stable format. Earlier five-key
 drafts are intentionally rejected. After schema 1 is released, similar
 breaking changes must bump the schema version.
+
+## D9 — Stable v1.0.0 and shared major versioning
+
+**Decision:** Declare the current six-field YAML contract as stable schema 1
+and the existing Rust library as crate v1.0.0. The wire `schema` stays the
+integer 1. Crate **major** versions track schema integers; crate minor/patch
+releases may change only compatible implementation/API details. Incompatible
+YAML changes must bump both schema integer and crate major version.
+
+**Reason:** Gives human, ChatGPT, and programmatic consumers a clear stable
+reference while distinguishing library maintenance from changes to the YAML
+language. The Rust library remains optional: a conforming document need
+not be authored by Rust software.

@@ -52,8 +52,9 @@ Public API:
 * `validate(&str) -> Result<(), Error>`: validity only;
 * `Job::{schema,shell,cwd,privilege,timeout_seconds,command}`: immutable accessors;
 * `Shell` and `Privilege`: closed enumerations;
-* `SCHEMA_VERSION`, `MAX_DOCUMENT_BYTES`, `MAX_COMMAND_BYTES`,
-  `MAX_CWD_BYTES`, `MIN_TIMEOUT_SECONDS`, `MAX_TIMEOUT_SECONDS`: explicit limits.
+* `SCHEMA_VERSION`, `IMPLEMENTATION_VERSION`, `MAX_DOCUMENT_BYTES`,
+  `MAX_COMMAND_BYTES`, `MAX_CWD_BYTES`, `MIN_TIMEOUT_SECONDS`,
+  `MAX_TIMEOUT_SECONDS`: version and explicit limits.
 
 The command and working directory are returned as decoded UTF-8 strings;
 Execarium does not normalize the command, resolve paths, interpret permissions,
@@ -105,7 +106,10 @@ without rejecting literal shell operators. See
 
 ## Compatibility policy
 
-Consumers MUST require the exact schema version they understand. A library
-may eventually parse additional schema versions, but that does not
-automatically grant a consumer permission to process them. Pin the parser
-revision and select allowed versions by explicit consumer policy.
+Consumers MUST require the exact schema version they understand. The crate
+major version is aligned to its primary supported YAML schema number
+(e.g. 1.x = schema 1); minor/patch changes do not modify schema 1.
+A future implementation could support older formats as an explicitly selected
+compatibility facility, never an implicit fallback. Pin a release tag or
+reviewed revision and check schema versions independently. See
+[VERSIONING.md](VERSIONING.md).

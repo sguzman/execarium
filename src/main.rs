@@ -19,8 +19,19 @@ fn read_bounded(mut reader: impl Read) -> Result<String, Box<dyn std::error::Err
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args_os().skip(1);
     let instruction = args.next();
+    if instruction.as_deref() == Some(OsStr::new("--version")) {
+        if args.next().is_some() {
+            return Err("Usage: execarium --version".into());
+        }
+        println!(
+            "execarium {} (schema: {})",
+            execarium::IMPLEMENTATION_VERSION,
+            execarium::SCHEMA_VERSION
+        );
+        return Ok(());
+    }
     if instruction.as_deref() != Some(OsStr::new("validate")) {
-        return Err("Usage: execarium validate <file-or->".into());
+        return Err("Usage: execarium validate <file-or-> | execarium --version".into());
     }
     let source = args.next().ok_or("Usage: execarium validate <file-or->")?;
     if args.next().is_some() {

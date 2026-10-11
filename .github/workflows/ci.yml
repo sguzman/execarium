@@ -21,6 +21,12 @@ jobs:
         run: cargo test --doc
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
+      - name: Release version and schema stay aligned
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fx 'version = "1.0.0"' Cargo.toml
+          cargo run --quiet -- --version | grep -Fx 'execarium 1.0.0 (schema: 1)'
       - name: CLI accepts documented examples
         shell: bash
         run: |
@@ -87,3 +93,27 @@ jobs:
             exit 1
           fi
           test ! -e "$root/not-run"
+
+  tag_v1:
+    name: Tag verified v1.0.0 release
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag exactly this verified revision, once
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fx 'version = "1.0.0"' Cargo.toml
+          # A release tag is immutable. Later main commits must not move it.
+          if git ls-remote --exit-code --tags origin refs/tags/v1.0.0 >/dev/null; then
+            echo "v1.0.0 is already tagged; leaving it unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a v1.0.0 -m "Execarium v1.0.0: stable schema 1" "$GITHUB_SHA"
+          git push origin refs/tags/v1.0.0
