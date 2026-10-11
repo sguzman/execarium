@@ -249,7 +249,9 @@ pub fn parse(input: &str) -> Result<Job, Error> {
         ));
     }
     if !(MIN_TIMEOUT_SECONDS..=MAX_TIMEOUT_SECONDS).contains(&raw.timeout_seconds) {
-        return Err(Error::InvalidTimeout("must be between 1 and 604800 seconds"));
+        return Err(Error::InvalidTimeout(
+            "must be between 1 and 604800 seconds",
+        ));
     }
     if raw.command.trim().is_empty() {
         return Err(Error::InvalidCommand(

@@ -3,7 +3,8 @@ use execarium::{
     MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS, SCHEMA_VERSION,
 };
 
-const MINIMAL: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
+const MINIMAL: &str =
+    "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
 
 fn reject(yaml: &str) {
     assert!(parse(yaml).is_err(), "unexpected acceptance of: {yaml:?}");
@@ -59,7 +60,14 @@ fn versions_must_be_explicit_exact_integer_one() {
 
 #[test]
 fn missing_duplicate_and_unknown_keys_fail_closed() {
-    for key in ["schema", "shell", "cwd", "privilege", "timeout_seconds", "command"] {
+    for key in [
+        "schema",
+        "shell",
+        "cwd",
+        "privilege",
+        "timeout_seconds",
+        "command",
+    ] {
         let filtered = MINIMAL
             .lines()
             .filter(|line| !line.starts_with(&format!("{key}:")))
@@ -156,14 +164,23 @@ fn parser_never_performs_filesystem_validation_or_execution() {
 #[test]
 fn timeout_is_required_exact_unsigned_integer_and_bounded() {
     for seconds in [MIN_TIMEOUT_SECONDS, 60, MAX_TIMEOUT_SECONDS] {
-        let yaml = MINIMAL.replace("timeout_seconds: 600", &format!("timeout_seconds: {seconds}"));
+        let yaml = MINIMAL.replace(
+            "timeout_seconds: 600",
+            &format!("timeout_seconds: {seconds}"),
+        );
         assert_eq!(parse(&yaml).unwrap().timeout_seconds(), seconds);
     }
-    for invalid in ["0", "604801", "-1", "1.5", "\"60\"", "true", "null", "[]", "{}"] {
-        reject(&MINIMAL.replace("timeout_seconds: 600", &format!("timeout_seconds: {invalid}")));
+    for invalid in [
+        "0", "604801", "-1", "1.5", "\"60\"", "true", "null", "[]", "{}",
+    ] {
+        reject(&MINIMAL.replace(
+            "timeout_seconds: 600",
+            &format!("timeout_seconds: {invalid}"),
+        ));
     }
     let err = parse(&MINIMAL.replace("timeout_seconds: 600", "timeout_seconds: 0")).unwrap_err();
     assert!(matches!(err, Error::InvalidTimeout(_)));
-    let err = parse(&MINIMAL.replace("timeout_seconds: 600", "timeout_seconds: 604801")).unwrap_err();
+    let err =
+        parse(&MINIMAL.replace("timeout_seconds: 600", "timeout_seconds: 604801")).unwrap_err();
     assert!(matches!(err, Error::InvalidTimeout(_)));
 }
