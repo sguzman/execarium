@@ -1,0 +1,9 @@
+# The exact decoded block content (including its final newline) is the command.
+schema: 1
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+command: |
+  cargo fmt --check
+  and cargo test
+  and cargo build

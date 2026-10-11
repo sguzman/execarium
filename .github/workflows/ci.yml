@@ -1,0 +1,74 @@
+name: Rust and schema conformance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Formatting
+        run: cargo fmt --all -- --check
+      - name: Build and unit/conformance tests
+        run: cargo test --all-targets
+      - name: Documentation tests
+        run: cargo test --doc
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: CLI accepts documented examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --quiet
+          for example in examples/*.yaml; do
+            ./target/debug/execarium validate "$example" | grep -q 'Valid Execarium schema 1'
+          done
+          ./target/debug/execarium validate - < examples/multiline-fish.yaml | grep -q 'Valid Execarium schema 1'
+      - name: CLI rejects unsupported input without executing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d)"
+          trap 'rm -rf "$root"' EXIT
+          cat > "$root/invalid.yaml" <<'EOF'
+          schema: 1
+          shell: fish
+          cwd: /tmp
+          privilege: none
+          command: echo not-run
+          executor: local
+          EOF
+          if ./target/debug/execarium validate "$root/invalid.yaml"; then
+            echo 'unknown key should have been rejected' >&2
+            exit 1
+          fi
+          cat > "$root/duplicate.yaml" <<'EOF'
+          schema: 1
+          shell: fish
+          shell: bash
+          cwd: /tmp
+          privilege: none
+          command: echo not-run
+          EOF
+          if ./target/debug/execarium validate "$root/duplicate.yaml"; then
+            echo 'duplicate key should have been rejected' >&2
+            exit 1
+          fi
+          cat > "$root/unsupported.yaml" <<'EOF'
+          schema: 2
+          shell: fish
+          cwd: /tmp
+          privilege: none
+          command: echo not-run
+          EOF
+          if ./target/debug/execarium validate "$root/unsupported.yaml"; then
+            echo 'unsupported schema should have been rejected' >&2
+            exit 1
+          fi
+          test ! -e "$root/not-run"

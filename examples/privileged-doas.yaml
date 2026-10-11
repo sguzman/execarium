@@ -1,0 +1,7 @@
+# A privilege request is NOT an approval. Execarium never executes this.
+# Any future consumer must hold this for explicit human authorization.
+schema: 1
+shell: fish
+cwd: /usr
+privilege: doas
+command: pacman -Syu

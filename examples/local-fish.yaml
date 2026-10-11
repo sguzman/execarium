@@ -1,0 +1,6 @@
+# This is data. Validation does not run cargo.
+schema: 1
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+command: cargo test

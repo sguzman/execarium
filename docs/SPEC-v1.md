@@ -1,0 +1,155 @@
+# Execarium schema 1: normative specification
+
+**Status:** first implementation, under review. **Schema version:** integer `1`.
+
+This document defines the portable wire representation of an Execarium **job
+request**. It is not an executable file format and does not authorize the work
+it describes. The key words **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are
+normative in this document.
+
+## 1. Scope
+
+Schema 1 describes a *single local shell command* and its associated working
+directory, shell dialect, and requested privilege mode. There is **no**
+executor/backend selector. The format has no concept of a remote target,
+container, VM, dependencies, resources, triggers, clipboard events, or secrets.
+
+Consumers MAY support only a subset of the available shells or privilege modes.
+They MUST reject unsupported configurations instead of substituting another
+shell or privilege mode.
+
+## 2. Minimal complete example
+
+```yaml
+schema: 1
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+command: cargo test
+```
+
+All five keys are **required**, appear exactly once, and have no defaults. Key
+ordering is not significant. Additional keys are invalid. The top level MUST
+be one YAML mapping, not a sequence or scalar.
+
+## 3. Field definitions
+
+### `schema` — unsigned integer
+
+The sole implemented version is `1`. It MUST be a YAML integer, not a quoted
+string, float, boolean, or null. A consumer MUST NOT infer a version from
+missing fields or silently migrate an unsupported version. A parser supporting
+schema 2 in the future must still honor the source document's stated version.
+
+### `shell` — enumeration
+
+One of the exact, lowercase strings `fish`, `bash`, or `sh`. The value
+specifies the **requested shell family**, not an executable path or arguments.
+Availability, dialect-specific syntax validation, and spawning belong to the
+consumer. The Execarium parser never invokes a shell.
+
+A consumer that only runs Fish MUST reject `bash` and `sh` rather than
+silently running those commands in Fish.
+
+### `cwd` — absolute POSIX path string
+
+The requested working directory. The parser enforces:
+
+* 1–4096 bytes of UTF-8;
+* starts with `/` (root `/` is valid);
+* contains no NUL, carriage return, or newline;
+* contains no path segment equal to `.` or `..`.
+
+The parser does **not** expand `~`, `$HOME`, variables, globbing, or symbolic
+links, and does **not** access the filesystem. The consumer MUST decide whether
+the path exists, is accessible, and is allowed by its execution policy. Path
+traversal via symlinks is not ruled out by the lexical validator; consumers
+requiring confinement must enforce it separately.
+
+### `privilege` — enumeration
+
+One of the exact, lowercase strings:
+
+| Value | Requested mode | Authorization effect |
+| --- | --- | --- |
+| `none` | No privilege wrapper requested | **None** |
+| `sudo` | Consumer may support a sudo workflow | **None** |
+| `doas` | Consumer may support a doas workflow | **None** |
+
+This field is a **description** and MUST NOT be interpreted as permission.
+`none` is not a security sandbox; the command text could itself contain
+`sudo`, `doas`, or another elevation mechanism. Consumers MUST make their own
+approval and OS authentication decisions, and MUST NOT derive authorization
+solely from a YAML document.
+
+A future Jobflick integration may hold privileged jobs for explicit review and
+out-of-band authentication. That is *not* a schema 1 parser feature.
+
+### `command` — UTF-8 string
+
+Nonempty after trimming whitespace, with a maximum of 131072 UTF-8 bytes
+(128 KiB). NUL bytes are invalid. Newlines, whitespace, shell punctuation,
+quotes, and ordinary Unicode are accepted. A plain scalar or a YAML literal
+block scalar (`|`, `|-`, `|+`) may be used. YAML's block chomping rules
+determine whether the final newline is included in the exact parsed command.
+
+The parser MUST preserve the decoded command string; it MUST NOT perform
+shell interpolation, command substitution, syntax checks, templating, whitespace
+normalization, or execution.
+
+```yaml
+schema: 1
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+command: |
+  cargo fmt --check
+  and cargo test
+```
+
+## 4. YAML subset and transport
+
+* Input is UTF-8 text.
+* A complete document has an upper limit of 262144 bytes (256 KiB), checked
+  **before** parsing.
+* Exactly one YAML document is accepted.
+* Duplicate keys are rejected, including duplicates of recognized keys.
+* Unknown keys are rejected.
+* YAML anchors, aliases, custom/standard explicit tags, version directives, and
+  tag directives are rejected. They must not be used to introduce indirection.
+* YAML comments and ordinary quoted scalars are allowed.
+* Numeric, boolean, null, sequence, or mapping values are invalid for string
+  fields even if a shell or YAML implementation could coerce them.
+* Successful parse returns a typed job description and **has no side effects**.
+
+YAML has scalar inference and quoting rules. Producers SHOULD quote ambiguous
+values, especially strings that could be interpreted as booleans or numbers,
+and SHOULD use a literal block scalar for multi-line shell source.
+
+Consumers MUST NOT use a generic YAML loader with duplicate-key overwriting
+or unknown-field tolerance and call the result conformant.
+
+## 5. Validation versus execution
+
+A conforming parser validates **shape, types, enumeration values, byte limits,
+and lexical path constraints only**. Successful parsing is not evidence that
+the command is safe, meaningful, runnable, syntactically valid for the chosen
+shell, authorized, or guaranteed to finish. The consumer MUST explicitly choose
+an execution policy and enforce it independently of this document.
+
+## 6. Schema version evolution
+
+The `schema` integer controls the *wire format*, not the library's Cargo
+version. For example, a library release 0.2.0 could still support only
+`schema: 1`. A producer must emit only the version agreed with its consumer.
+Consumers SHOULD pin a reviewed parser revision and MUST explicitly allow
+supported schema versions. Unknown versions are rejected by default. Schema 1
+will not acquire new required or optional keys by silent interpretation:
+materially different semantics belong in a new schema version.
+
+## 7. Compatibility checklist
+
+A conforming implementation MUST accept the valid fixture files in
+`examples/` and reject invalid cases documented in
+[CONFORMANCE.md](CONFORMANCE.md). See [SECURITY.md](SECURITY.md) for the
+authorization and clipboard threat model.
