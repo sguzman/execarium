@@ -119,6 +119,12 @@ fn command_is_literal_nonempty_bounded_text() {
     reject(&MINIMAL.replace("command: echo ok", "command: \"   \""));
     reject(&MINIMAL.replace("command: echo ok", "command: null"));
     reject(&MINIMAL.replace("command: echo ok", "command: 99"));
+    assert_eq!(
+        parse(&MINIMAL.replace("command: echo ok", "command: \"null\""))
+            .unwrap()
+            .command(),
+        "null"
+    );
     let nul_command = MINIMAL.replace("command: echo ok", "command: \"a\\0b\"");
     reject(&nul_command);
     let at_limit = "x".repeat(MAX_COMMAND_BYTES);

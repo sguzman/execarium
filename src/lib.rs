@@ -189,6 +189,23 @@ pub fn parse(input: &str) -> Result<Job, Error> {
         return Err(Error::DocumentTooLarge);
     }
     reject_unsupported_yaml_features(input)?;
+
+    // Serde can coerce some plain YAML scalars into Rust String, e.g.
+    // 'command: null'. Check the original YAML value categories first so
+    // string fields must actually be YAML strings rather than coerced types.
+    let generic: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
+    if let Some(mapping) = generic.as_mapping() {
+        for name in ["cwd", "command"] {
+            if let Some(value) = mapping.get(&serde_yaml_ng::Value::String(name.to_owned())) {
+                if !matches!(value, serde_yaml_ng::Value::String(_)) {
+                    return Err(Error::InvalidYaml(format!(
+                        "field {name} must be a YAML string"
+                    )));
+                }
+            }
+        }
+    }
     let raw: RawJob =
         serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
 
