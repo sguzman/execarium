@@ -5,9 +5,10 @@
 Execarium has **two contracts** with different compatibility requirements.
 
 1. **YAML wire schema:** a required, unsigned integer inside every document,
-   currently `schema: 1`. Version 1 is the immutable six-field wire contract
-   defined in [SPEC-v1.md](SPEC-v1.md). New or changed YAML fields or meanings
-   require a **new schema integer**, for example `schema: 2`.
+   currently schemas `1` and `2`. Schema 1 is the immutable six-field wire
+   contract defined in [SPEC-v1.md](SPEC-v1.md); schema 2 defines ordered
+   `commands:` sequences in [SPEC-v2.md](SPEC-v2.md). Any further wire changes
+   require a **new schema integer**, not an in-place reinterpretation.
 2. **Rust reference crate:** conventional Semantic Versioning (SemVer),
    currently **1.2.0**. A major increment indicates a breaking **Rust API**
    change; minor releases add backward-compatible Rust features; patches

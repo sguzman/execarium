@@ -151,7 +151,7 @@ fn executable_reports_actual_crate_and_schema_versions() {
     let value = String::from_utf8(out.stdout).unwrap();
     assert_eq!(
         value.trim(),
-        format!("execarium {} (schema: 1)", env!("CARGO_PKG_VERSION"))
+        format!("execarium {} (schemas: 1,2)", env!("CARGO_PKG_VERSION"))
     );
 }
 

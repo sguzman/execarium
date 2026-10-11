@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo build --quiet
-          for example in examples/*.yaml; do
+          for example in examples/local-fish.yaml examples/multiline-fish.yaml examples/privileged-doas.yaml; do
             ./target/debug/execarium validate "$example" | grep -q 'Valid Execarium schema 1.*timeout_seconds='
           done
           ./target/debug/execarium validate - < examples/multiline-fish.yaml | grep -q 'Valid Execarium schema 1'
@@ -131,7 +131,7 @@ jobs:
           test ! -e "$root/not-run"
 
   tag_release:
-    name: Tag verified crate release
+    name: Publish verified crate release
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -139,18 +139,28 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Create immutable version tag after CI passes
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Create immutable version tag and GitHub Release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           version="$(grep -m1 '^version = "' Cargo.toml | cut -d '"' -f2)"
           test -n "$version"
           tag="v$version"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
-            echo "$tag already exists; leaving its original commit unchanged"
+            echo "$tag already exists; leaving its original commit and release unchanged"
             exit 0
           fi
+          cargo build --release
+          mkdir -p dist/package
+          install -m755 target/release/execarium dist/package/execarium
+          cp LICENSE README.md docs/SPEC-v1.md docs/SPEC-v2.md dist/package/
+          tar -czf dist/execarium-linux-x86_64.tar.gz -C dist/package .
+          (cd dist && sha256sum execarium-linux-x86_64.tar.gz > SHA256SUMS)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" -m "Execarium $tag: schemas 1 and 2 library" "$GITHUB_SHA"
           git push origin "refs/tags/$tag"
+          gh release create "$tag" dist/execarium-linux-x86_64.tar.gz dist/SHA256SUMS --title "Execarium $tag" --generate-notes --verify-tag

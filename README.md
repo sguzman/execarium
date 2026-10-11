@@ -111,9 +111,10 @@ For v1, consumers must not silently select or infer a remote/container/VM backen
 There is deliberately no `executor` field: a shell is assumed to be local by the
 specification, but each consumer must explicitly opt into that execution model.
 
-**Clipboard scanning and automatic ingestion are deferred.** Nothing in this
-repository reads the clipboard or watches it. Jobflick integration itself is also
-deferred until this standalone format has been reviewed and stabilized.
+**Clipboard scanning and automatic ingestion remain outside Execarium.** This
+repository never reads or watches the clipboard. The separate Jobflick executor
+now consumes both supported schemas and owns clipboard submission, runtime
+policy enforcement, scheduling, and execution.
 
 ## Library
 
@@ -167,8 +168,10 @@ assert_eq!(v1::Validator::parse(&yaml)?, job);
 # Ok::<(), execarium::Error>(())
 ```
 
-`execarium::validate_for_schema(1, yaml)` selects exactly validator v1;
-asking for version 2 returns `UnsupportedSchema`, not an implicit fallback.
+`execarium::validate_for_schema(1, yaml)` and
+`execarium::validate_for_schema(2, yaml)` validate the specified schema without
+fallback. The legacy typed `parse_for_schema` returns only schema-1 `Job`;
+use `parse_document_for_schema` for a typed multi-schema result.
 The library handles **construction + serialization + validation**. The
 CLI remains validation-only, never an executor.
 

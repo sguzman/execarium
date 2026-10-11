@@ -15,6 +15,10 @@ Semantic Versioning **independently** of the YAML schema integer; see
 * Extend validation-only CLI to recognize schema 1 and schema 2 documents.
 * Document normative v2 semantics and keep frozen schema 1 unchanged.
 * No execution, clipboard monitoring or privilege authorization in Execarium.
+* Align the CLI version acceptance check with both supported schemas and verify
+  valid and intentionally invalid schema-2 examples separately in CI.
+* Publish GitHub release notes, a Linux CLI archive and checksums only after
+  the full release checks pass; preserve existing version tags.
 
 ## [1.1.2] — 2026-10-11
 
