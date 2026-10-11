@@ -1,4 +1,4 @@
-# Rust API reference — Execarium crate 1.1.2 (MVP)
+# Rust API reference — Execarium crate 1.2.0 (schemas 1 and 2)
 
 Execarium has **two distinct deliverables**:
 
@@ -28,7 +28,7 @@ The stable schema and crate versions are distinct:
 | First stable crate | `1.0.0` |
 | Rust API additions | `1.1.0` |
 | Tested MVP crate release | `1.1.1` |
-| Independent crate versioning policy | `1.1.2` |
+| Independent crate versioning policy | `1.2.0` |
 | Validator namespace | `execarium::v1` |
 | Future breaking YAML changes | a new schema integer, independent of crate major |
 | Future breaking Rust API changes | new crate major, independent of schema |
@@ -106,7 +106,7 @@ values such as `null`, `true`, shell punctuation and multiline commands.
 ```rust
 use execarium::{parse_for_schema, validate_for_schema, SUPPORTED_SCHEMAS};
 
-assert_eq!(SUPPORTED_SCHEMAS, &[1]);
+assert_eq!(SUPPORTED_SCHEMAS, &[1, 2]);
 let source = "schema: 1\nshell: sh\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 60\ncommand: printf ok\n";
 validate_for_schema(1, source)?;
 let job = parse_for_schema(1, source)?;
@@ -116,15 +116,13 @@ assert!(parse_for_schema(2, source).is_err()); // no version guessing
 ```
 
 Explicit version selection checks both the **caller-selected version** and
-the **document's declared schema**. A request to validate with a nonexistent
-v2 validator fails closed; a source declaring v2 passed to v1 also fails.
+the **document's declared schema**. The legacy `parse_for_schema` API is intentionally schema-1-only; a
+source declaring v2 passed to v1 fails. Use `parse_document_for_schema`
+for any supported schema.
 
-A future library release can add `v2::Validator` alongside `v1::Validator`
-without necessarily bumping its Rust major version, provided its public API
-change is compatible. Conversely, a breaking Rust API redesign may increment
-the crate major while still supporting only schema 1. The two tracks are
-independent. This repository currently implements **only v1**. It does not
-invent v2 syntax or import any historical draft as a separate format.
+This crate adds `v2::Validator` alongside the unchanged `v1::Validator`
+without changing its Rust major version. The two version tracks remain
+independent. Schema 2 is separately specified in [SPEC-v2.md](SPEC-v2.md).
 
 ## 5. The API
 
@@ -173,8 +171,8 @@ hold privileged work for separate human authorization, enforce the requested
 runtime timeout at process launch, and supervise jobs.
 
 The v1 format has one shell-specific `command` string. Sequential independent
-`commands:` arrays are not part of schema 1; they would be a future schema
-and an independently versioned library release.
+`commands:` arrays belong only to schema 2, validated through
+`v2::Validator` and the multi-schema `parse_document` API.
 
 ## 8. Tests, examples, and CI
 
