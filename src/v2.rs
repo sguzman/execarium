@@ -190,6 +190,12 @@ mod tests {
     #[test]
     fn strict_valid_sequence_round_trip() {
         let job = Validator::parse(good()).unwrap();
+        assert!(crate::validate_for_schema(2, good()).is_ok());
+        assert!(crate::validate_for_schema(1, good()).is_err());
+        assert!(matches!(
+            crate::parse_document_for_schema(2, good()).unwrap(),
+            crate::Document::V2(_)
+        ));
         assert_eq!(job.schema(), 2);
         assert_eq!(
             job.commands().iter().map(String::as_str).collect::<Vec<_>>(),
