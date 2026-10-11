@@ -338,8 +338,8 @@ pub fn construct(
 /// Stable module namespace for schema 1. Future format versions get separate
 /// validators, avoiding accidental silent changes to the v1 contract.
 pub mod v1 {
-    pub use crate::{Job, Privilege, Shell};
     use crate::{Error, SCHEMA_VERSION};
+    pub use crate::{Job, Privilege, Shell};
 
     /// Exact YAML integer supported by this validator.
     pub const SCHEMA: u64 = SCHEMA_VERSION;
@@ -396,4 +396,3 @@ pub mod v1 {
         Validator::validate(input)
     }
 }
-

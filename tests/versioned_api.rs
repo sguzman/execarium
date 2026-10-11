@@ -13,10 +13,19 @@ fn only_version_one_validator_is_available() {
     v1::Validator::validate(input).unwrap();
     v1::validate(input).unwrap();
     validate_for_schema(1, input).unwrap();
-    assert!(matches!(parse_for_schema(2, input), Err(Error::UnsupportedSchema(2))));
-    assert!(matches!(validate_for_schema(0, input), Err(Error::UnsupportedSchema(0))));
+    assert!(matches!(
+        parse_for_schema(2, input),
+        Err(Error::UnsupportedSchema(2))
+    ));
+    assert!(matches!(
+        validate_for_schema(0, input),
+        Err(Error::UnsupportedSchema(0))
+    ));
     let mismatched = input.replace("schema: 1", "schema: 2");
-    assert!(matches!(parse_for_schema(1, &mismatched), Err(Error::UnsupportedSchema(2))));
+    assert!(matches!(
+        parse_for_schema(1, &mismatched),
+        Err(Error::UnsupportedSchema(2))
+    ));
 }
 
 #[test]
@@ -24,7 +33,8 @@ fn typed_construction_uses_the_same_v1_field_constraints() {
     let job = v1::construct(Shell::Fish, "/tmp", Privilege::None, 600, "echo ok").unwrap();
     let through_validator =
         v1::Validator::construct(Shell::Fish, "/tmp", Privilege::None, 600, "echo ok").unwrap();
-    let through_top_level = construct(Shell::Fish, "/tmp", Privilege::None, 600, "echo ok").unwrap();
+    let through_top_level =
+        construct(Shell::Fish, "/tmp", Privilege::None, 600, "echo ok").unwrap();
     assert_eq!(job, through_validator);
     assert_eq!(job, through_top_level);
     assert_eq!(job.schema(), 1);
@@ -45,7 +55,14 @@ fn typed_construction_uses_the_same_v1_field_constraints() {
         ));
     }
     assert!(v1::construct(Shell::Fish, "/", Privilege::None, 1, "x".repeat(131073)).is_err());
-    assert!(v1::construct(Shell::Sh, "/".to_owned(), Privilege::Doas, 604800, "printf ok").is_ok());
+    assert!(v1::construct(
+        Shell::Sh,
+        "/".to_owned(),
+        Privilege::Doas,
+        604800,
+        "printf ok"
+    )
+    .is_ok());
 }
 
 #[test]
@@ -54,9 +71,27 @@ fn typed_round_trip_renders_documents_with_the_same_exact_data() {
         ("echo hi", "/tmp", Shell::Fish, Privilege::None, 600),
         ("null", "/tmp", Shell::Bash, Privilege::Doas, 1),
         ("true", "/tmp", Shell::Sh, Privilege::Sudo, 604800),
-        ("echo '* & !' && printf '%s' 'hello: world'", "/a folder", Shell::Fish, Privilege::None, 16),
-        ("echo one\nand echo two\n", "/", Shell::Fish, Privilege::None, 30),
-        ("printf 'colon: yes'\n", "/tmp", Shell::Sh, Privilege::None, 30),
+        (
+            "echo '* & !' && printf '%s' 'hello: world'",
+            "/a folder",
+            Shell::Fish,
+            Privilege::None,
+            16,
+        ),
+        (
+            "echo one\nand echo two\n",
+            "/",
+            Shell::Fish,
+            Privilege::None,
+            30,
+        ),
+        (
+            "printf 'colon: yes'\n",
+            "/tmp",
+            Shell::Sh,
+            Privilege::None,
+            30,
+        ),
     ];
 
     for (command, cwd, shell, privilege, timeout) in examples {
