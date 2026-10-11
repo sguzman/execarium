@@ -21,12 +21,13 @@ jobs:
         run: cargo test --doc
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
-      - name: Release version and schema stay aligned
+      - name: Independent crate version and schema compatibility
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fx 'version = "1.1.1"' Cargo.toml
-          cargo run --quiet -- --version | grep -Fx 'execarium 1.1.1 (schema: 1)'
+          version="$(grep -m1 '^version = "' Cargo.toml | cut -d '"' -f2)"
+          test -n "$version"
+          cargo run --quiet -- --version | grep -Fx "execarium $version (schema: 1)"
       - name: Rust typed-construction example round-trips
         shell: bash
         run: |

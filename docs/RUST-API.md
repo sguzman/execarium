@@ -1,4 +1,4 @@
-# Rust API reference — Execarium crate 1.1.1 (MVP)
+# Rust API reference — Execarium crate 1.1.2 (MVP)
 
 Execarium has **two distinct deliverables**:
 
@@ -28,8 +28,10 @@ The stable schema and crate versions are distinct:
 | First stable crate | `1.0.0` |
 | Rust API additions | `1.1.0` |
 | Tested MVP crate release | `1.1.1` |
+| Independent crate versioning policy | `1.1.2` |
 | Validator namespace | `execarium::v1` |
-| Future breaking wire changes | new schema integer and corresponding crate major |
+| Future breaking YAML changes | a new schema integer, independent of crate major |
+| Future breaking Rust API changes | new crate major, independent of schema |
 
 ## Installation
 
@@ -37,7 +39,7 @@ Use the pinned GitHub tag until any future crates.io publication:
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.1" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.2" }
 ```
 
 Rust 2021 edition, at least Rust 1.76 as declared in Cargo.toml.
@@ -117,10 +119,12 @@ Explicit version selection checks both the **caller-selected version** and
 the **document's declared schema**. A request to validate with a nonexistent
 v2 validator fails closed; a source declaring v2 passed to v1 also fails.
 
-A future major library with a new wire schema can add `v2::Validator`
-without changing the normative definition of `v1::Validator`.
-This repository currently implements **only v1**. It does not invent v2
-syntax or import any historical draft as a separate format.
+A future library release can add `v2::Validator` alongside `v1::Validator`
+without necessarily bumping its Rust major version, provided its public API
+change is compatible. Conversely, a breaking Rust API redesign may increment
+the crate major while still supporting only schema 1. The two tracks are
+independent. This repository currently implements **only v1**. It does not
+invent v2 syntax or import any historical draft as a separate format.
 
 ## 5. The API
 
@@ -170,7 +174,7 @@ runtime timeout at process launch, and supervise jobs.
 
 The v1 format has one shell-specific `command` string. Sequential independent
 `commands:` arrays are not part of schema 1; they would be a future schema
-and new major library release.
+and an independently versioned library release.
 
 ## 8. Tests, examples, and CI
 

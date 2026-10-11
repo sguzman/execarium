@@ -8,7 +8,7 @@ requested privilege level and execution timeout. It is an independent Rust libra
 so Jobflick and future projects can share one contract without importing a scheduler.
 
 > **Status: MVP.** Stable YAML **schema 1** (initially released v1.0.0).
-> Rust reference crate **v1.1.1** includes versioned construction, validation,
+> Rust reference crate **v1.1.2** includes versioned construction, validation,
 > YAML rendering, a portable conformance corpus and extensive acceptance tests.
 > No execution, clipboard monitoring, background service, privilege escalation,
 > or installation hooks. This repository is not published to crates.io.
@@ -18,11 +18,13 @@ so Jobflick and future projects can share one contract without importing a sched
 **Execarium v1.0.0** established stable YAML **schema 1** and the
 Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** added construction
 and explicit per-schema validator APIs. **Crate 1.1.1** is the tested MVP
-release; it keeps the same library API and YAML contract. The YAML `schema` remains the integer
-`1`, not `1.0.0`. Crate **major** version and schema integer are tied;
-crate minor/patch changes may improve the parser/API without changing schema
-1's meaning. Breaking changes to the YAML language require **schema 2** and
-crate **2.x**. No implicit compatibility fallback.
+release; it keeps the same library API and YAML contract. The current Rust
+crate **1.1.2** preserves the MVP API and formally decouples crate and YAML
+versioning. YAML declares `schema: 1`, not `1.0.0`. **Rust SemVer and the
+YAML schema version are independent.** A Rust major release can continue
+supporting schema 1, and a compatible Rust release could add a schema-2
+validator alongside v1. Consumers must explicitly select supported schema
+versions; no implicit compatibility fallback.
 
 See [versioning policy](docs/VERSIONING.md), [changelog](CHANGELOG.md), and
 [ChatGPT authoring guide](docs/CHATGPT.md).
@@ -98,7 +100,7 @@ Add the repository as a Git dependency (not published to crates.io):
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.1" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.2" }
 ```
 
 ```rust
@@ -177,9 +179,9 @@ consumer-specific execution tests belong to Jobflick.
 
 ## Rules for evolving the format
 
-1. **Version first:** schema 1 is now stable. Any changes that make existing
-   YAML incompatible or change semantics require a new integer `schema`
-   version and a matching crate major version.
+1. **Independent versions:** schema 1 is stable. Incompatible YAML changes
+   require a new integer `schema` version, not a matching Rust crate major
+   release. Rust crate SemVer changes when its public Rust API changes.
 2. **Fail closed:** unknown keys, duplicate keys, unsupported versions and malformed
    YAML are errors; no silent coercions.
 3. **No accidental authority:** parsing is never consent to execution; privilege

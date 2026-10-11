@@ -116,10 +116,11 @@ without rejecting literal shell operators. See
 
 ## Compatibility policy
 
-Consumers MUST require the exact schema version they understand. The crate
-major version is aligned to its primary supported YAML schema number
-(e.g. 1.x = schema 1); minor/patch changes do not modify schema 1.
-A future implementation could support older formats as an explicitly selected
-compatibility facility, never an implicit fallback. Pin a release tag or
-reviewed revision and check schema versions independently. See
+Consumers MUST require an explicitly supported YAML schema version. Rust
+crate SemVer and YAML schema integers are **independent**: a future 2.x
+Rust crate may still support schema 1, and compatible Rust releases may
+add additional schema validators. Such support must be explicit and retain
+earlier schema semantics, never silently fall back or reinterpret documents.
+Pin a release tag or reviewed revision and check schema compatibility using
+`SUPPORTED_SCHEMAS` or a specific versioned validator. See
 [VERSIONING.md](VERSIONING.md) and [RUST-API.md](RUST-API.md).

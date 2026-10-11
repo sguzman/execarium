@@ -4,10 +4,19 @@ use execarium::{
 };
 
 #[test]
-fn crate_major_version_matches_schema_major_version() {
-    let crate_major: u64 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
-    assert_eq!(crate_major, SCHEMA_VERSION);
+fn crate_semver_and_yaml_schema_are_independent_contracts() {
+    // Rust SemVer releases do not determine which YAML schemas are accepted.
+    // Check each contract separately; never require equal major versions.
+    for part in [
+        env!("CARGO_PKG_VERSION_MAJOR"),
+        env!("CARGO_PKG_VERSION_MINOR"),
+        env!("CARGO_PKG_VERSION_PATCH"),
+    ] {
+        let _: u64 = part.parse().expect("valid numeric crate SemVer part");
+    }
     assert_eq!(execarium::IMPLEMENTATION_VERSION, env!("CARGO_PKG_VERSION"));
+    assert_eq!(SCHEMA_VERSION, 1);
+    assert_eq!(execarium::SUPPORTED_SCHEMAS, &[1]);
 }
 
 const MINIMAL: &str =

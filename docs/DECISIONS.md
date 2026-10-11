@@ -66,15 +66,32 @@ schema 1; it is not a silent change to a stable format. Earlier five-key
 drafts are intentionally rejected. After schema 1 is released, similar
 breaking changes must bump the schema version.
 
-## D9 — Stable v1.0.0 and shared major versioning
+## D9 — Historical decision: initial alignment of v1.0.0 and schema 1
 
-**Decision:** Declare the current six-field YAML contract as stable schema 1
-and the existing Rust library as crate v1.0.0. The wire `schema` stays the
-integer 1. Crate **major** versions track schema integers; crate minor/patch
-releases may change only compatible implementation/API details. Incompatible
-YAML changes must bump both schema integer and crate major version.
+**Historical decision (superseded by D10):** Declare the current six-field
+YAML contract as stable schema 1 and the existing Rust library as crate
+v1.0.0. At the time, we also required equal crate and schema major numbers.
+The alignment was convenient at bootstrap, but this restriction was later
+withdrawn in D10.
 
 **Reason:** Gives human, ChatGPT, and programmatic consumers a clear stable
 reference while distinguishing library maintenance from changes to the YAML
 language. The Rust library remains optional: a conforming document need
 not be authored by Rust software.
+
+## D10 — Independent specification and reference-library versions
+
+**Decision:** The YAML specification uses its own schema integer; the Rust
+library uses independent Semantic Versioning. Neither is calculated from the
+other. The reference library declares its exact implemented schema versions
+via `SUPPORTED_SCHEMAS` and explicit per-version validators.
+
+**Reason:** Library API compatibility and wire-format compatibility have
+different boundaries. A breaking Rust API redesign may leave existing YAML
+valid, while additive Rust support for a newer YAML schema need not break
+existing library clients. Consumers must explicitly choose allowed schemas.
+
+**Migration:** D10 supersedes D9's major-number equality constraint.
+The six-field stable YAML schema 1, existing version-1 validation semantics,
+and previously tagged Rust releases remain unchanged. Crate 1.1.2 updates
+policy, documentation and regression tests only.

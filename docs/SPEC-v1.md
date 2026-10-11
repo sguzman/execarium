@@ -1,7 +1,8 @@
 # Execarium schema 1: normative specification
 
-**Status:** stable **Execarium v1.0.0**. **Wire schema:** integer `1`.
-**Reference crate:** `1.0.0`. Normative schema changes require a new major version.
+**Status:** stable YAML schema 1, originally released with Execarium v1.0.0.
+**Wire schema:** integer `1`. **First reference crate:** `1.0.0`.
+YAML schema versions evolve independently from Rust crate Semantic Versioning.
 
 This document defines the portable wire representation of an Execarium **job
 request**. It is not an executable file format and does not authorize the work
@@ -167,8 +168,8 @@ an execution policy and enforce it independently of this document.
 ## 6. Schema version evolution
 
 The `schema` integer controls the *wire format*, not the library's Cargo
-version. For example, a library release 0.2.0 could still support only
-`schema: 1`. A producer must emit only the version agreed with its consumer.
+version. A future crate 2.0.0 could still support only `schema: 1`, while
+a compatible library release may support additional schema validators. A producer must emit only the version agreed with its consumer.
 Consumers SHOULD pin a reviewed parser revision and MUST explicitly allow
 supported schema versions. Unknown versions are rejected by default. Schema 1
 will not acquire new required or optional keys by silent interpretation:
@@ -178,7 +179,7 @@ materially different semantics belong in a new schema version.
 during the pre-release drafting stage. The five-field prototype is not a
 released version and is rejected by the stable v1 parser. Effective with
 `v1.0.0`, schema 1 is frozen: breaking or semantic changes MUST use a new
-integer `schema` and the matching crate major version. Consult
+integer `schema`, independently of any crate major version. Consult
 [VERSIONING.md](VERSIONING.md).
 
 ## 7. Compatibility checklist

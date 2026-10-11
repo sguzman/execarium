@@ -23,11 +23,13 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use yaml_rust2::scanner::{Scanner, TokenType};
 
-/// The sole supported YAML schema major version in this release.
-/// Crate major version and schema major version MUST match.
+/// Stable YAML wire schema supported by this implementation.
+///
+/// This number is independent of the Rust crate's Semantic Version.
+/// A single crate may eventually support multiple schema versions.
 pub const SCHEMA_VERSION: u64 = 1;
-/// Only supported stable YAML wire schema. New major versions add validators
-/// explicitly rather than reinterpreting an existing document.
+/// Explicitly supported YAML schema versions. Additional format versions
+/// require separately defined validators; never silently reinterpret v1.
 pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION];
 /// Reference implementation version, independent of the YAML `schema` integer.
 pub const IMPLEMENTATION_VERSION: &str = env!("CARGO_PKG_VERSION");

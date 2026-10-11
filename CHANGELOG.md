@@ -1,8 +1,22 @@
 # Changelog
 
 All notable releases are documented here. Rust implementation releases follow
-Semantic Versioning. The **crate major version matches the YAML schema
-integer**; see [VERSIONING.md](docs/VERSIONING.md).
+Semantic Versioning **independently** of the YAML schema integer; see
+[VERSIONING.md](docs/VERSIONING.md).
+
+## [1.1.2] — 2026-10-11
+
+**Independent versioning policy; YAML schema 1 unchanged.**
+
+* Removed the rule requiring Rust crate major versions to match YAML schema
+  integers. A future Rust 2.x release may still implement schema 1; a future
+  compatible Rust 1.x release could add a separately validated schema 2.
+* Updated version documentation, architecture and decision records.
+* Replaced the version-equality conformance test with independent checks for
+  Rust SemVer metadata and explicit schema support.
+* CI checks the version declared by Cargo.toml dynamically, rather than
+  hardcoding the current crate patch release.
+* No changes to v1 YAML fields, parser/builder behavior or execution policy.
 
 ## [1.1.1] — 2026-10-11
 
@@ -91,3 +105,5 @@ to consumers or later specifications.
 [1.1.0]: https://github.com/sguzman/execarium/tree/v1.1.0
 
 [1.1.1]: https://github.com/sguzman/execarium/tree/v1.1.1
+
+[1.1.2]: https://github.com/sguzman/execarium/tree/v1.1.2

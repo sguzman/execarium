@@ -1,6 +1,6 @@
 # Scope and roadmap
 
-## Status: MVP — stable schema 1, Rust crate v1.1.1
+## Status: MVP — stable schema 1, Rust crate v1.1.2
 
 The standalone six-field specification and Rust reference parser are stable
 as v1.0.0. Jobflick is a separate project; integration remains a deliberate,
@@ -13,7 +13,7 @@ separately authorized next step.
 * [x] Strictness, security and conformance documentation
 * [x] Positive/negative parser tests and CI
 * [x] Accept v1.0.0 as the stable six-field baseline
-* [x] Align crate 1.0.0 with schema 1
+* [x] Establish initial v1.0.0 release with schema 1
 * [x] Add version-specific `v1::Validator`, typed construction, rendering and
   shared validation in compatible crate 1.1.0
 * [x] Add versioning policy, release history and AI authoring instructions
@@ -23,6 +23,7 @@ separately authorized next step.
   parser attempts, plus 54 enum/timeout combinations
 * [x] Run and pass the complete acceptance gate before promoting MVP
 * [x] Mark independent Execarium specification/library as MVP (crate 1.1.1)
+* [x] Decouple crate SemVer and YAML schema evolution in crate 1.1.2
 * [ ] Resume Jobflick and integrate structured submission **explicitly**
 
 ## Settled v1 decisions
@@ -66,6 +67,7 @@ trusted OS channel.
 * Does a future v2 need separate command arguments or environment variables?
 
 The timeout addition occurred in the **unreleased prototype**, and the
-earlier five-field draft is intentionally rejected. Version 1.0.0 freezes
-the six-field contract. Future incompatible changes require a new schema
-integer and matching Rust crate major version. See [VERSIONING.md](VERSIONING.md).
+earlier five-field draft is intentionally rejected. YAML schema 1 freezes
+the six-field contract. Future incompatible YAML changes require a new
+schema integer **independently of Rust crate SemVer**. See
+[VERSIONING.md](VERSIONING.md).
