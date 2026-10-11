@@ -6,7 +6,8 @@ use std::path::PathBuf;
 use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-const VALID: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
+const VALID: &str =
+    "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo ok\n";
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 
 struct TestDir(PathBuf);
@@ -14,10 +15,8 @@ struct TestDir(PathBuf);
 impl TestDir {
     fn new() -> Self {
         let ordinal = NEXT.fetch_add(1, Ordering::Relaxed);
-        let dir = std::env::temp_dir().join(format!(
-            "execarium-cli-{}-{ordinal}",
-            std::process::id()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("execarium-cli-{}-{ordinal}", std::process::id()));
         fs::create_dir(&dir).unwrap();
         Self(dir)
     }
@@ -68,10 +67,7 @@ fn accepts_stdin_and_reports_only_safe_metadata() {
 fn reads_valid_yaml_files_without_launching_the_command() {
     let tmp = TestDir::new();
     let sentinel = tmp.0.join("must-not-be-created-by-Execarium");
-    let doc = VALID.replace(
-        "echo ok",
-        &format!("touch {}", sentinel.display()),
-    );
+    let doc = VALID.replace("echo ok", &format!("touch {}", sentinel.display()));
     let path = tmp.file("safe.yaml", doc.as_bytes());
     let out = binary().arg("validate").arg(&path).output().unwrap();
     assert!(out.status.success());
@@ -85,13 +81,22 @@ fn rejects_unsupported_versions_and_malformed_file_inputs() {
         ("unsupported.yaml", VALID.replace("schema: 1", "schema: 2")),
         ("duplicate.yaml", format!("{VALID}command: override\n")),
         ("extra.yaml", format!("{VALID}executor: local\n")),
-        ("timeout.yaml", VALID.replace("timeout_seconds: 600", "timeout_seconds: 0")),
-        ("nonnumeric.yaml", VALID.replace("timeout_seconds: 600", "timeout_seconds: \"600\"")),
+        (
+            "timeout.yaml",
+            VALID.replace("timeout_seconds: 600", "timeout_seconds: 0"),
+        ),
+        (
+            "nonnumeric.yaml",
+            VALID.replace("timeout_seconds: 600", "timeout_seconds: \"600\""),
+        ),
     ] {
         let path = tmp.file(name, doc.as_bytes());
         let out = binary().arg("validate").arg(&path).output().unwrap();
         assert!(!out.status.success(), "accepted {name}");
-        assert!(out.stdout.is_empty(), "{name} unexpectedly produced success output");
+        assert!(
+            out.stdout.is_empty(),
+            "{name} unexpectedly produced success output"
+        );
         assert!(!out.stderr.is_empty(), "missing error detail for {name}");
     }
 }
@@ -113,7 +118,13 @@ fn rejects_oversized_files_and_oversized_stdin() {
 fn invalid_utf8_from_stdin_and_files_is_rejected() {
     let tmp = TestDir::new();
     let path = tmp.file("invalid-utf8.yaml", &[b'a', 0xff, b'b']);
-    assert!(!binary().arg("validate").arg(path).output().unwrap().status.success());
+    assert!(!binary()
+        .arg("validate")
+        .arg(path)
+        .output()
+        .unwrap()
+        .status
+        .success());
     assert!(!run_stdin(&[b'a', 0xff, b'b']).status.success());
 }
 

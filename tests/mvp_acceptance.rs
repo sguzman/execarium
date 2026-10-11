@@ -2,8 +2,8 @@
 //! The pseudo-random cases use fixed seeds so CI failures are reproducible.
 use execarium::{
     construct, parse, parse_for_schema, v1, validate_for_schema, Error, Privilege, Shell,
-    MAX_COMMAND_BYTES, MAX_CWD_BYTES, MAX_DOCUMENT_BYTES, MAX_TIMEOUT_SECONDS,
-    MIN_TIMEOUT_SECONDS, SCHEMA_VERSION, SUPPORTED_SCHEMAS,
+    MAX_COMMAND_BYTES, MAX_CWD_BYTES, MAX_DOCUMENT_BYTES, MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS,
+    SCHEMA_VERSION, SUPPORTED_SCHEMAS,
 };
 
 const BASE: &str = "schema: 1\nshell: fish\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 600\ncommand: echo hello\n";
@@ -59,14 +59,8 @@ fn exhaustive_shell_privilege_and_timeout_boundary_matrix() {
     for shell in [Shell::Fish, Shell::Bash, Shell::Sh] {
         for privilege in [Privilege::None, Privilege::Sudo, Privilege::Doas] {
             for timeout in [MIN_TIMEOUT_SECONDS, 2, 60, 600, 3600, MAX_TIMEOUT_SECONDS] {
-                let constructed = construct(
-                    shell,
-                    "/workspace",
-                    privilege,
-                    timeout,
-                    "echo carefully",
-                )
-                .unwrap();
+                let constructed =
+                    construct(shell, "/workspace", privilege, timeout, "echo carefully").unwrap();
                 let yaml = v1::Validator::render(&constructed).unwrap();
                 let parsed = v1::Validator::parse(&yaml).unwrap();
                 assert_eq!(parsed, constructed);
@@ -82,7 +76,14 @@ fn exhaustive_shell_privilege_and_timeout_boundary_matrix() {
 
 #[test]
 fn all_six_fields_are_mandatory_and_must_not_repeat() {
-    for key in ["schema", "shell", "cwd", "privilege", "timeout_seconds", "command"] {
+    for key in [
+        "schema",
+        "shell",
+        "cwd",
+        "privilege",
+        "timeout_seconds",
+        "command",
+    ] {
         let missing = BASE
             .lines()
             .filter(|line| !line.starts_with(&format!("{key}:")))
@@ -131,7 +132,9 @@ fn strict_type_rejection_covers_all_fields() {
     for value in ["null", "true", "12", "[]", "{}", "\"\"", "\"   \""] {
         reject_document(&modified("command", value));
     }
-    for value in ["null", "true", "-1", "0", "604801", "1.5", "\"600\"", "[]", "{}"] {
+    for value in [
+        "null", "true", "-1", "0", "604801", "1.5", "\"600\"", "[]", "{}",
+    ] {
         reject_document(&modified("timeout_seconds", value));
     }
 }
@@ -204,8 +207,22 @@ fn command_byte_limits_are_not_character_limits() {
         assert_eq!(job.command(), source);
         assert_eq!(v1::parse(&job.to_yaml().unwrap()).unwrap(), job);
     }
-    assert!(v1::construct(Shell::Fish, "/", Privilege::None, 60, format!("{max_ascii}x")).is_err());
-    assert!(v1::construct(Shell::Fish, "/", Privilege::None, 60, format!("{max_unicode}x")).is_err());
+    assert!(v1::construct(
+        Shell::Fish,
+        "/",
+        Privilege::None,
+        60,
+        format!("{max_ascii}x")
+    )
+    .is_err());
+    assert!(v1::construct(
+        Shell::Fish,
+        "/",
+        Privilege::None,
+        60,
+        format!("{max_unicode}x")
+    )
+    .is_err());
     for bad in ["", " ", "\n  \r", "\0", "safe\0unsafe"] {
         assert!(matches!(
             v1::construct(Shell::Sh, "/", Privilege::None, 600, bad),
@@ -288,7 +305,10 @@ fn independent_version_selection_never_falls_back() {
         ));
     }
     let mismatched = modified("schema", "2");
-    assert!(matches!(parse_for_schema(1, &mismatched), Err(Error::UnsupportedSchema(2))));
+    assert!(matches!(
+        parse_for_schema(1, &mismatched),
+        Err(Error::UnsupportedSchema(2))
+    ));
     assert_eq!(parse_for_schema(1, BASE).unwrap(), parse(BASE).unwrap());
 }
 
@@ -356,6 +376,9 @@ fn randomized_untrusted_inputs_never_panic() {
         let first = std::panic::catch_unwind(|| v1::Validator::parse(&input));
         assert!(first.is_ok(), "parser panicked in case {case}: {input:?}");
         let second = std::panic::catch_unwind(|| v1::Validator::validate(&input));
-        assert!(second.is_ok(), "validator panicked in case {case}: {input:?}");
+        assert!(
+            second.is_ok(),
+            "validator panicked in case {case}: {input:?}"
+        );
     }
 }

@@ -1,45 +1,40 @@
-//! Stable, language-neutral conformance corpus for YAML schema 1.
-//! Other implementations can reuse tests/fixtures/v1/{valid,invalid}.
+//! Stable, language-neutral schema-1 YAML fixtures, reusable by other parsers.
 use execarium::v1;
+use std::fs;
+use std::path::Path;
 
-#[test]
-fn all_valid_v1_corpus_files_are_accepted_and_round_trip() {
-    let valid: [(&str, &str); 6] = [
-        ("fish-basic", include_str!("fixtures/v1/valid/fish-basic.yaml")),
-        ("bash-multiline", include_str!("fixtures/v1/valid/bash-multiline.yaml")),
-        ("doas-manual-approval", include_str!("fixtures/v1/valid/doas-manual-approval.yaml")),
-        ("quoted-command", include_str!("fixtures/v1/valid/quoted-command.yaml")),
-        ("unicode", include_str!("fixtures/v1/valid/unicode.yaml")),
-        ("quoted-scalar", include_str!("fixtures/v1/valid/quoted-scalar.yaml")),
-    ];
-    for (name, input) in valid {
-        let job = v1::Validator::parse(input)
-            .unwrap_or_else(|err| panic!("valid fixture {name} rejected: {err}"));
-        let output = job.to_yaml().unwrap();
-        assert_eq!(v1::Validator::parse(&output).unwrap(), job, "{name}");
+fn verify_directory(name: &str, expected_count: usize, valid: bool) {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("v1")
+        .join(name);
+    let mut count = 0;
+    for entry in fs::read_dir(root).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        assert_eq!(path.extension().and_then(|s| s.to_str()), Some("yaml"));
+        let input = fs::read_to_string(&path).unwrap();
+        let result = v1::Validator::parse(&input);
+        if valid {
+            let job = result.unwrap_or_else(|err| panic!("{}: {err}", path.display()));
+            let encoded = job.to_yaml().unwrap();
+            assert_eq!(v1::Validator::parse(&encoded).unwrap(), job);
+        } else {
+            assert!(result.is_err(), "invalid fixture accepted: {}", path.display());
+            assert!(v1::Validator::validate(&input).is_err());
+        }
+        count += 1;
     }
+    assert_eq!(count, expected_count, "fixture corpus unexpectedly changed");
 }
 
 #[test]
-fn all_invalid_v1_corpus_files_are_rejected() {
-    let invalid: [(&str, &str); 14] = [
-        ("missing-timeout", include_str!("fixtures/v1/invalid/missing-timeout.yaml")),
-        ("unknown-field", include_str!("fixtures/v1/invalid/unknown-field.yaml")),
-        ("duplicate-key", include_str!("fixtures/v1/invalid/duplicate-key.yaml")),
-        ("unsupported-schema", include_str!("fixtures/v1/invalid/unsupported-schema.yaml")),
-        ("quoted-schema", include_str!("fixtures/v1/invalid/quoted-schema.yaml")),
-        ("bad-shell", include_str!("fixtures/v1/invalid/bad-shell.yaml")),
-        ("bad-privilege", include_str!("fixtures/v1/invalid/bad-privilege.yaml")),
-        ("relative-cwd", include_str!("fixtures/v1/invalid/relative-cwd.yaml")),
-        ("zero-timeout", include_str!("fixtures/v1/invalid/zero-timeout.yaml")),
-        ("quoted-timeout", include_str!("fixtures/v1/invalid/quoted-timeout.yaml")),
-        ("null-command", include_str!("fixtures/v1/invalid/null-command.yaml")),
-        ("alias", include_str!("fixtures/v1/invalid/alias.yaml")),
-        ("tag", include_str!("fixtures/v1/invalid/tag.yaml")),
-        ("multidocument", include_str!("fixtures/v1/invalid/multidocument.yaml")),
-    ];
-    for (name, input) in invalid {
-        assert!(v1::Validator::parse(input).is_err(), "invalid fixture {name} accepted");
-        assert!(v1::Validator::validate(input).is_err(), "validator accepted {name}");
-    }
+fn valid_v1_fixtures_are_accepted_and_round_trip() {
+    verify_directory("valid", 6, true);
+}
+
+#[test]
+fn invalid_v1_fixtures_are_all_rejected() {
+    verify_directory("invalid", 14, false);
 }
