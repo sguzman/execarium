@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           version="$(grep -m1 '^version = "' Cargo.toml | cut -d '"' -f2)"
           test -n "$version"
-          cargo run --quiet -- --version | grep -Fx "execarium $version (schema: 1)"
+          cargo run --quiet -- --version | grep -Fx "execarium $version (schemas: 1,2)"
       - name: Rust typed-construction example round-trips
         shell: bash
         run: |
@@ -88,7 +88,7 @@ jobs:
             exit 1
           fi
           cat > "$root/unsupported.yaml" <<'EOF'
-          schema: 2
+          schema: 3
           shell: fish
           cwd: /tmp
           privilege: none
@@ -135,5 +135,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$tag" -m "Execarium $tag: schema 1 library" "$GITHUB_SHA"
+          git tag -a "$tag" -m "Execarium $tag: schemas 1 and 2 library" "$GITHUB_SHA"
           git push origin "refs/tags/$tag"
