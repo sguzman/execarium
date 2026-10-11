@@ -7,8 +7,8 @@ a consumer is being asked to run**, in which working directory, with what
 requested privilege level and execution timeout. It is an independent Rust library and a validation-only CLI,
 so Jobflick and future projects can share one contract without importing a scheduler.
 
-> **Status: MVP.** Stable YAML **schema 1** (initially released v1.0.0).
-> Rust reference crate **v1.1.2** includes versioned construction, validation,
+> **Status: MVP plus new schema 2 implementation.** Stable schema 1 remains unchanged.
+> Rust reference crate **v1.2.0** includes versioned construction, validation,
 > YAML rendering, a portable conformance corpus and extensive acceptance tests.
 > No execution, clipboard monitoring, background service, privilege escalation,
 > or installation hooks. This repository is not published to crates.io.
@@ -19,12 +19,10 @@ so Jobflick and future projects can share one contract without importing a sched
 Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** added construction
 and explicit per-schema validator APIs. **Crate 1.1.1** is the tested MVP
 release; it keeps the same library API and YAML contract. The current Rust
-crate **1.1.2** preserves the MVP API and formally decouples crate and YAML
-versioning. YAML declares `schema: 1`, not `1.0.0`. **Rust SemVer and the
-YAML schema version are independent.** A Rust major release can continue
-supporting schema 1, and a compatible Rust release could add a schema-2
-validator alongside v1. Consumers must explicitly select supported schema
-versions; no implicit compatibility fallback.
+crate **1.1.2** decoupled crate and YAML versions. Crate **1.2.0** adds
+schema 2 via a separate validator while preserving schema 1 and its API.
+**Rust SemVer and YAML schema versions are independent.** Consumers must
+select supported versions; there is no implicit compatibility fallback.
 
 See [versioning policy](docs/VERSIONING.md), [changelog](CHANGELOG.md), and
 [ChatGPT authoring guide](docs/CHATGPT.md).
@@ -69,6 +67,34 @@ command: |
 See [v1 normative specification](docs/SPEC-v1.md), [security and trust boundaries](docs/SECURITY.md),
 [architecture and integration](docs/ARCHITECTURE.md), [conformance](docs/CONFORMANCE.md),
 and the [roadmap](docs/ROADMAP.md).
+
+## Schema 2: ordered stop-on-failure command sequences
+
+Schema 2 replaces the single `command:` key with a sequence of `commands:`
+and retains the same `schema`, `shell`, `cwd`, `privilege`, and
+`timeout_seconds` fields:
+
+```yaml
+schema: 2
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+commands:
+  - cargo fmt --check
+  - cargo test
+  - cargo build
+```
+
+**Consumers**, not Execarium, must execute one step at a time, stop on the
+first failed step, and enforce one deadline for the full running sequence.
+Step shells do not share transient state. Schema 1 retains `command:` for
+normal shell scripts with shared shell context. Schema 2 rejects `command:`;
+schema 1 rejects `commands:`.
+
+See [schema 2 normative specification](docs/SPEC-v2.md) for limits, validation
+and precise failure semantics. The library offers `v2::Validator` and
+`parse_document`; the CLI validates both schemas but never executes them.
 
 ## Design boundary
 
@@ -174,8 +200,8 @@ cargo run -- validate examples/local-fish.yaml
 
 The CI workflow runs those checks, the portable 20-file YAML corpus,
 real-binary CLI tests, deterministic randomized stress checks and 54
-shell/privilege/timeout combinations. Schema 1 remains frozen; future
-consumer-specific execution tests belong to Jobflick.
+shell/privilege/timeout combinations. Schema 1 remains frozen; consumer-specific execution tests belong to Jobflick; Execarium also has
+schema-2 validation and example fixtures.
 
 ## Rules for evolving the format
 
