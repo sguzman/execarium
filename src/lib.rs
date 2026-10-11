@@ -197,7 +197,7 @@ pub fn parse(input: &str) -> Result<Job, Error> {
         serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
     if let Some(mapping) = generic.as_mapping() {
         for name in ["cwd", "command"] {
-            if let Some(value) = mapping.get(&serde_yaml_ng::Value::String(name.to_owned())) {
+            if let Some(value) = mapping.get(serde_yaml_ng::Value::String(name.to_owned())) {
                 if !matches!(value, serde_yaml_ng::Value::String(_)) {
                     return Err(Error::InvalidYaml(format!(
                         "field {name} must be a YAML string"
