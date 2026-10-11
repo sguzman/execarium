@@ -208,15 +208,20 @@ pub(crate) fn reject_unsupported_yaml_features(input: &str) -> Result<(), Error>
 /// The document's declared wire schema version, without any default or fallback.
 /// Consumers must still run the exact versioned validator before accepting work.
 pub fn detect_schema(input: &str) -> Result<u64, Error> {
-    if input.len() > MAX_DOCUMENT_BYTES { return Err(Error::DocumentTooLarge); }
+    if input.len() > MAX_DOCUMENT_BYTES {
+        return Err(Error::DocumentTooLarge);
+    }
     reject_unsupported_yaml_features(input)?;
     let value: serde_yaml_ng::Value =
         serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
-    let map = value.as_mapping().ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
+    let map = value
+        .as_mapping()
+        .ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
     let schema = map.get(serde_yaml_ng::Value::String("schema".into()));
     match schema {
-        Some(serde_yaml_ng::Value::Number(n)) => n.as_u64().ok_or_else(||
-            Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
+        Some(serde_yaml_ng::Value::Number(n)) => n
+            .as_u64()
+            .ok_or_else(|| Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
         _ => Err(Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
     }
 }
@@ -244,7 +249,9 @@ pub fn validate_document(input: &str) -> Result<(), Error> {
 /// Parse a document against an explicitly selected schema version.
 pub fn parse_document_for_schema(schema: u64, input: &str) -> Result<Document, Error> {
     if detect_schema(input)? != schema {
-        return Err(Error::InvalidYaml("declared schema differs from requested version".into()));
+        return Err(Error::InvalidYaml(
+            "declared schema differs from requested version".into(),
+        ));
     }
     parse_document(input)
 }
