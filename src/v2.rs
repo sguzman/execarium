@@ -58,7 +58,9 @@ fn checked(raw: RawJob) -> Result<Job, Error> {
         return Err(Error::UnsupportedSchema(raw.schema));
     }
     if raw.commands.is_empty() || raw.commands.len() > MAX_STEPS {
-        return Err(Error::InvalidCommand("commands must contain 1 to 256 steps"));
+        return Err(Error::InvalidCommand(
+            "commands must contain 1 to 256 steps",
+        ));
     }
     let mut total_bytes = 0usize;
     for command in &raw.commands {
@@ -104,7 +106,9 @@ impl Validator {
             get("schema"),
             Some(serde_yaml_ng::Value::Number(n)) if n.as_u64() == Some(SCHEMA)
         ) {
-            return Err(Error::InvalidYaml("schema must be the YAML integer 2".into()));
+            return Err(Error::InvalidYaml(
+                "schema must be the YAML integer 2".into(),
+            ));
         }
         if !matches!(
             get("timeout_seconds"),
@@ -119,10 +123,19 @@ impl Validator {
         }
         let items = match get("commands") {
             Some(serde_yaml_ng::Value::Sequence(items)) => items,
-            _ => return Err(Error::InvalidYaml("commands must be a YAML sequence".into())),
+            _ => {
+                return Err(Error::InvalidYaml(
+                    "commands must be a YAML sequence".into(),
+                ))
+            }
         };
-        if items.iter().any(|item| !matches!(item, serde_yaml_ng::Value::String(_))) {
-            return Err(Error::InvalidYaml("every command must be a YAML string".into()));
+        if items
+            .iter()
+            .any(|item| !matches!(item, serde_yaml_ng::Value::String(_)))
+        {
+            return Err(Error::InvalidYaml(
+                "every command must be a YAML string".into(),
+            ));
         }
         let raw: RawJob =
             serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
@@ -198,7 +211,10 @@ mod tests {
         ));
         assert_eq!(job.schema(), 2);
         assert_eq!(
-            job.commands().iter().map(String::as_str).collect::<Vec<_>>(),
+            job.commands()
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
             vec!["printf one", "printf two"]
         );
         assert_eq!(
@@ -224,8 +240,14 @@ mod tests {
             good().replace("schema: 2", "schema: 1"),
             good().replace("schema: 2", "schema: '2'"),
             good().replace("timeout_seconds: 60", "timeout_seconds: '60'"),
-            good().replace("commands:\n  - 'printf one'\n  - 'printf two'", "command: printf one"),
-            good().replace("commands:\n  - 'printf one'\n  - 'printf two'", "commands: []"),
+            good().replace(
+                "commands:\n  - 'printf one'\n  - 'printf two'",
+                "command: printf one",
+            ),
+            good().replace(
+                "commands:\n  - 'printf one'\n  - 'printf two'",
+                "commands: []",
+            ),
             good().replace("  - 'printf two'", "  - 42"),
             good().replace("  - 'printf two'", "  - ''"),
             good().replace("  - 'printf two'", "  - null"),
@@ -238,7 +260,10 @@ mod tests {
             good().replace("commands:", "commands: &steps"),
             format!("{}commands:\n  - echo duplicate\n", good()),
         ] {
-            assert!(Validator::parse(&bad).is_err(), "unexpected acceptance: {bad}");
+            assert!(
+                Validator::parse(&bad).is_err(),
+                "unexpected acceptance: {bad}"
+            );
         }
         let legacy = concat!(
             "schema: 1\n",

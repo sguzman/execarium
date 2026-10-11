@@ -222,7 +222,9 @@ pub fn detect_schema(input: &str) -> Result<u64, Error> {
         Some(serde_yaml_ng::Value::Number(n)) => n
             .as_u64()
             .ok_or_else(|| Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
-        _ => Err(Error::InvalidYaml("schema must be an unsigned YAML integer".into())),
+        _ => Err(Error::InvalidYaml(
+            "schema must be an unsigned YAML integer".into(),
+        )),
     }
 }
 

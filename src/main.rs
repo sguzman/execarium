@@ -45,11 +45,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     match job {
         execarium::Document::V1(spec) => println!(
             "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={})",
-            spec.schema(), spec.shell(), spec.privilege(), spec.timeout_seconds()
+            spec.schema(),
+            spec.shell(),
+            spec.privilege(),
+            spec.timeout_seconds()
         ),
         execarium::Document::V2(spec) => println!(
             "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={}, steps={})",
-            spec.schema(), spec.shell(), spec.privilege(), spec.timeout_seconds(),
+            spec.schema(),
+            spec.shell(),
+            spec.privilege(),
+            spec.timeout_seconds(),
             spec.commands().len()
         ),
     }
