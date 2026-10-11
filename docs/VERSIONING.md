@@ -3,14 +3,15 @@
 ## Rule: crate major == wire schema integer
 
 **Execarium 1.0.0** is the first stable release. The Rust package
-version is now `1.1.0`, which adds backwards-compatible construction and
-versioned validator APIs. Conforming YAML documents still declare
+version is now `1.1.1`. Crate 1.1.0 added backwards-compatible construction
+and versioned validator APIs; 1.1.1 is the tested MVP quality release. Conforming YAML documents still declare
 `schema: 1`.
 
 This is deliberate, not a typo:
 
 * **Initial Git tag:** `v1.0.0` / Rust crate `1.0.0`.
-* **Current Git tag / implementation:** `v1.1.0` / Rust crate `1.1.0`.
+* **Current Git tag / implementation:** `v1.1.1` / Rust crate `1.1.1`.
+* **Earlier compatible library release:** `v1.1.0` / crate `1.1.0`.
 * **YAML wire schema:** integer `1`, not `1.0.0` or `"1"`.
 * **Compatibility mapping:** crate major 1 implements schema 1.
   A future crate major 2 implements schema 2; any optional support for schema

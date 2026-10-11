@@ -1,6 +1,6 @@
 # Scope and roadmap
 
-## Status: standalone schema v1.0.0
+## Status: MVP — stable schema 1, Rust crate v1.1.1
 
 The standalone six-field specification and Rust reference parser are stable
 as v1.0.0. Jobflick is a separate project; integration remains a deliberate,
@@ -17,7 +17,12 @@ separately authorized next step.
 * [x] Add version-specific `v1::Validator`, typed construction, rendering and
   shared validation in compatible crate 1.1.0
 * [x] Add versioning policy, release history and AI authoring instructions
-* [x] Configure CI to publish the immutable v1.0.0 tag after verification
+* [x] Configure CI to publish immutable crate tags after verification
+* [x] Add 20 portable YAML fixtures and robust CLI validation acceptance tests
+* [x] Add 2,000 deterministic YAML round trips and 3,000 malformed-input
+  parser attempts, plus 54 enum/timeout combinations
+* [x] Run and pass the complete acceptance gate before promoting MVP
+* [x] Mark independent Execarium specification/library as MVP (crate 1.1.1)
 * [ ] Resume Jobflick and integrate structured submission **explicitly**
 
 ## Settled v1 decisions

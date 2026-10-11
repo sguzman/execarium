@@ -4,6 +4,23 @@ All notable releases are documented here. Rust implementation releases follow
 Semantic Versioning. The **crate major version matches the YAML schema
 integer**; see [VERSIONING.md](docs/VERSIONING.md).
 
+## [1.1.1] — 2026-10-11
+
+**Execarium MVP acceptance release, YAML schema 1 unchanged.**
+
+* 20 standalone version-1 YAML conformance documents: six valid, fourteen invalid.
+* Added independent real CLI integration tests covering stdin, files,
+  invalid UTF-8, bounded input, argument handling, and no-command-execution.
+* Added deterministic stress tests: 2,000 construction/YAML/parse round trips,
+  3,000 malformed-input robustness checks, and 54 shell/privilege/timeout
+  combinations.
+* Expanded boundary, lexical-path, scalar-type, unknown/duplicate-field,
+  YAML tag/alias and exact schema-selection checks.
+* CI enforces the portable corpus through both the Rust API and CLI.
+* Acceptance policy and results documented in
+  [MVP-ACCEPTANCE.md](docs/MVP-ACCEPTANCE.md).
+* No changes to the normative wire schema, builder, parser, or executor policy.
+
 ## [1.1.0] — 2026-10-11
 
 **Compatible Rust library feature release; YAML schema remains 1.**
@@ -72,3 +89,5 @@ to consumers or later specifications.
 [1.0.0]: https://github.com/sguzman/execarium/tree/v1.0.0
 
 [1.1.0]: https://github.com/sguzman/execarium/tree/v1.1.0
+
+[1.1.1]: https://github.com/sguzman/execarium/tree/v1.1.1

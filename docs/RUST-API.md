@@ -1,4 +1,4 @@
-# Rust API reference — Execarium crate 1.1.0
+# Rust API reference — Execarium crate 1.1.1 (MVP)
 
 Execarium has **two distinct deliverables**:
 
@@ -27,6 +27,7 @@ The stable schema and crate versions are distinct:
 | YAML wire schema | `schema: 1` |
 | First stable crate | `1.0.0` |
 | Rust API additions | `1.1.0` |
+| Tested MVP crate release | `1.1.1` |
 | Validator namespace | `execarium::v1` |
 | Future breaking wire changes | new schema integer and corresponding crate major |
 
@@ -36,7 +37,7 @@ Use the pinned GitHub tag until any future crates.io publication:
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.0" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.1" }
 ```
 
 Rust 2021 edition, at least Rust 1.76 as declared in Cargo.toml.

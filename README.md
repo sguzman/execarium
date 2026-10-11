@@ -7,16 +7,18 @@ a consumer is being asked to run**, in which working directory, with what
 requested privilege level and execution timeout. It is an independent Rust library and a validation-only CLI,
 so Jobflick and future projects can share one contract without importing a scheduler.
 
-> **Status:** stable **v1.0.0** YAML specification; Rust reference library
-> **v1.1.0** adds versioned validation, typed construction and YAML rendering.
+> **Status: MVP.** Stable YAML **schema 1** (initially released v1.0.0).
+> Rust reference crate **v1.1.1** includes versioned construction, validation,
+> YAML rendering, a portable conformance corpus and extensive acceptance tests.
 > No execution, clipboard monitoring, background service, privilege escalation,
 > or installation hooks. This repository is not published to crates.io.
 
 ## Versions
 
 **Execarium v1.0.0** established stable YAML **schema 1** and the
-Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** adds construction and
-explicit per-schema validator APIs. The YAML `schema` remains the integer
+Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** added construction
+and explicit per-schema validator APIs. **Crate 1.1.1** is the tested MVP
+release; it keeps the same library API and YAML contract. The YAML `schema` remains the integer
 `1`, not `1.0.0`. Crate **major** version and schema integer are tied;
 crate minor/patch changes may improve the parser/API without changing schema
 1's meaning. Breaking changes to the YAML language require **schema 2** and
@@ -96,7 +98,7 @@ Add the repository as a Git dependency (not published to crates.io):
 
 ```toml
 [dependencies]
-execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.0" }
+execarium = { git = "https://github.com/sguzman/execarium", tag = "v1.1.1" }
 ```
 
 ```rust
@@ -143,7 +145,8 @@ The library handles **construction + serialization + validation**. The
 CLI remains validation-only, never an executor.
 
 Read the [complete Rust API guide](docs/RUST-API.md) for methods, invariants,
-compatibility and integration examples.
+compatibility and integration examples. The [MVP acceptance report](docs/MVP-ACCEPTANCE.md)
+documents the test coverage, acceptance criteria, and limits of verification.
 
 ## CLI (validation only)
 
@@ -167,7 +170,10 @@ cargo run --example create_yaml
 cargo run -- validate examples/local-fish.yaml
 ```
 
-The CI workflow runs those checks and tests valid and invalid fixtures.
+The CI workflow runs those checks, the portable 20-file YAML corpus,
+real-binary CLI tests, deterministic randomized stress checks and 54
+shell/privilege/timeout combinations. Schema 1 remains frozen; future
+consumer-specific execution tests belong to Jobflick.
 
 ## Rules for evolving the format
 

@@ -1,8 +1,12 @@
 # Execarium MVP acceptance gate
 
-**Scope:** Released YAML **schema 1** and the current Rust reference
-implementation. This gate occurs **before** declaring the Rust library
-sufficiently tested for routine consumption by Jobflick.
+**Status: PASSED.** Execarium specification/library MVP accepted for
+**Rust crate 1.1.1** with unchanged **YAML schema 1**.
+
+**Baseline gate evidence:** [passing expanded acceptance CI run](https://github.com/sguzman/execarium/actions/runs/38165379434)
+(commit `52d8850086cd522513d4793bf8a5639931065c35`, before the release-version
+and documentation changes). The v1.1.1 release pipeline separately repeats
+the complete gate and tags only the successfully verified release commit.
 
 Execarium is a specification, constructor, serializer, and validator; it is
 **not** a command executor. Consequently, these tests do not demonstrate
@@ -73,11 +77,15 @@ done
 
 ## Post-acceptance scope
 
-A successful gate permits formalizing **Execarium as MVP**. The stable
-wire schema will still be `schema: 1`, and Rust library improvements only
-require a **patch** release. Jobflick remains an independent project: it
-must deliberately integrate and test the parser, queue, authorization holds,
-per-job launch, timeout enforcement, and copy/report behavior.
+**MVP acceptance decision:** The dedicated test battery has passed, so
+Execarium is approved for consumption as a strict schema-1 parser,
+constructor and renderer. The crate version advances to **1.1.1**, without
+new fields, authorization mechanisms, or runtime behavior. Its signed-off
+library-level scope is not a promise about any consumer's execution behavior.
+
+Jobflick remains an independent project: it must deliberately integrate
+and test the parser, queue, authorization holds, per-job launch, timeout
+enforcement, and copy/report behavior.
 
 The full status and exact CI run must be recorded only **after** results
 have been verified. Do not mark a gate green merely because files exist.
