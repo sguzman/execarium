@@ -120,3 +120,32 @@ all normative schema-2 details. Execarium still performs **no execution**.
 
 Generated YAML is untrusted input. Reading it, validating it, or copying
 it to a clipboard must never automatically authorize its execution.
+
+## Schema-3 execution environments (post-MVP)
+
+Use schema 3 if the intended executor supports live desktop/GPU context
+resolution. A complete example:
+
+```yaml
+schema: 3
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+environment:
+  session: hyprland
+  gpu: nvidia
+command: |
+  hyprctl activewindow
+```
+
+Always declare both `environment.session` (`inherit`, `wayland`, `hyprland`)
+and `environment.gpu` (`inherit`, `integrated`, `nvidia`). Declare exactly
+one `command` script or `commands` list. Hyprland includes the Wayland
+connection; GPU preference is independent. Never omit fields or silently
+downgrade an unsupported session or GPU. Use `inherit` explicitly when no
+override is requested. See [SPEC-v3.md](SPEC-v3.md) for the complete contract.
+
+Execarium never executes the command or resolves environments. The human
+decides which submitted YAML to execute; consumers must implement the
+requested context before accepting schema 3.

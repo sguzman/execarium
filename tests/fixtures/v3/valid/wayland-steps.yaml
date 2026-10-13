@@ -1,0 +1,12 @@
+schema: 3
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+environment:
+  session: wayland
+  gpu: integrated
+commands:
+  - cargo fmt --check
+  - cargo test
+  - cargo build

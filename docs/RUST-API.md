@@ -1,4 +1,4 @@
-# Rust API reference — Execarium crate 1.2.0 (schemas 1 and 2)
+# Rust API reference — Execarium crate 1.3.0 (schemas 1, 2 and 3)
 
 Execarium has **two distinct deliverables**:
 
@@ -106,7 +106,7 @@ values such as `null`, `true`, shell punctuation and multiline commands.
 ```rust
 use execarium::{parse_for_schema, validate_for_schema, SUPPORTED_SCHEMAS};
 
-assert_eq!(SUPPORTED_SCHEMAS, &[1, 2]);
+assert_eq!(SUPPORTED_SCHEMAS, &[1, 2, 3]);
 let source = "schema: 1\nshell: sh\ncwd: /tmp\nprivilege: none\ntimeout_seconds: 60\ncommand: printf ok\n";
 validate_for_schema(1, source)?;
 let job = parse_for_schema(1, source)?;
@@ -193,3 +193,32 @@ cargo run -- validate examples/local-fish.yaml
 
 The **schema-1 specification** remains [SPEC-v1.md](SPEC-v1.md); this page
 describes the Rust convenience implementation, not new YAML behavior.
+
+## 9. Schema-3 typed execution contexts
+
+Schema 3 adds a mandatory two-field execution context and either a shared-shell
+script or a sequence of independent steps, without changing older validators:
+
+```rust
+use execarium::{v3, Privilege, Shell};
+
+let environment = v3::Environment::new(v3::Session::Hyprland, v3::Gpu::Nvidia);
+let job = v3::Validator::construct(
+    Shell::Fish, "/tmp", Privilege::None, 600, environment,
+    v3::CommandSource::Script("hyprctl activewindow".to_owned()),
+)?;
+let yaml = v3::Validator::render(&job)?;
+assert_eq!(v3::Validator::parse(&yaml)?, job);
+assert_eq!(job.environment().session(), v3::Session::Hyprland);
+# Ok::<(), execarium::Error>(())
+```
+
+Use `v3::CommandSource::Steps(vec![...])` for independently executed
+stop-on-failure commands. `job.command()` and `job.commands()` return mutually
+exclusive optional references. `parse_document` returns `Document::V3`;
+`validate_for_schema(3, source)` validates exact schema 3. Legacy
+`parse_for_schema` remains schema-1-only.
+
+These values are descriptions rather than runtime environment changes.
+A consumer must resolve graphical session details and supported GPU routing
+at job start. See [SPEC-v3.md](SPEC-v3.md).

@@ -5,7 +5,7 @@ use execarium::{
 
 #[test]
 fn legacy_parser_remains_schema_one_only() {
-    assert_eq!(SUPPORTED_SCHEMAS, &[1, 2]);
+    assert_eq!(SUPPORTED_SCHEMAS, &[1, 2, 3]);
     assert_eq!(v1::SCHEMA, SCHEMA_VERSION);
     assert_eq!(IMPLEMENTATION_VERSION, env!("CARGO_PKG_VERSION"));
     let input = include_str!("../examples/local-fish.yaml");

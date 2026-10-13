@@ -7,8 +7,8 @@ a consumer is being asked to run**, in which working directory, with what
 requested privilege level and execution timeout. It is an independent Rust library and a validation-only CLI,
 so Jobflick and future projects can share one contract without importing a scheduler.
 
-> **Status: MVP plus new schema 2 implementation.** Stable schema 1 remains unchanged.
-> Rust reference crate **v1.2.0** includes versioned construction, validation,
+> **Status: post-MVP crate 1.3.0, supporting strict schemas 1, 2 and 3.** Schemas 1 and 2 remain unchanged.
+> Rust reference crate **v1.3.0** includes versioned construction, validation,
 > YAML rendering, a portable conformance corpus and extensive acceptance tests.
 > No execution, clipboard monitoring, background service, privilege escalation,
 > or installation hooks. This repository is not published to crates.io.
@@ -19,8 +19,9 @@ so Jobflick and future projects can share one contract without importing a sched
 Rust **crate 1.0.0**. The compatible Rust **crate 1.1.0** added construction
 and explicit per-schema validator APIs. **Crate 1.1.1** is the tested MVP
 release; it keeps the same library API and YAML contract. The current Rust
-crate **1.1.2** decoupled crate and YAML versions. Crate **1.2.0** adds
-schema 2 via a separate validator while preserving schema 1 and its API.
+crate **1.1.2** decoupled crate and YAML versions. Crate **1.2.0** added
+schema 2; crate **1.3.0** adds schema 3 and typed execution context. All earlier
+schemas remain unchanged.
 **Rust SemVer and YAML schema versions are independent.** Consumers must
 select supported versions; there is no implicit compatibility fallback.
 
@@ -96,6 +97,27 @@ See [schema 2 normative specification](docs/SPEC-v2.md) for limits, validation
 and precise failure semantics. The library offers `v2::Validator` and
 `parse_document`; the CLI validates both schemas but never executes them.
 
+## Schema 3: execution context (post-MVP)
+
+Schema 3 declares the live graphical session and GPU a consumer should arrange when the job **starts**, rather than relying on stale daemon environment variables:
+
+```yaml
+schema: 3
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+environment:
+  session: hyprland
+  gpu: nvidia
+command: |
+  hyprctl activewindow
+```
+
+The mandatory `environment` mapping requires `session: inherit|wayland|hyprland` and `gpu: inherit|integrated|nvidia`. Hyprland includes Wayland, while GPU routing is independent of graphical-session access. Schema 3 accepts **exactly one** `command:` (shared shell script) or `commands:` (independent stop-on-failure steps); earlier schemas keep their shapes. Execarium validates the request; it neither grants permissions nor resolves sockets, selects GPUs or executes commands. Executors must opt into schema 3 and reject contexts they cannot satisfy instead of silently falling back.
+
+See [schema 3 specification](docs/SPEC-v3.md), [script example](examples/hyprland-fish-v3.yaml) and [steps example](examples/steps-wayland-v3.yaml). The Rust API exposes `v3::Validator` and `v3::{Environment,Session,Gpu,CommandSource,Job}`. Jobflick integration is a separate follow-up.
+
 ## Design boundary
 
 **Execarium only parses and validates.** It does not decide that a command is
@@ -113,7 +135,7 @@ specification, but each consumer must explicitly opt into that execution model.
 
 **Clipboard scanning and automatic ingestion remain outside Execarium.** This
 repository never reads or watches the clipboard. The separate Jobflick executor
-now consumes both supported schemas and owns clipboard submission, runtime
+currently consumes schemas 1 and 2 and owns clipboard submission, runtime
 policy enforcement, scheduling, and execution.
 
 ## Library
@@ -201,10 +223,9 @@ cargo run --example create_yaml
 cargo run -- validate examples/local-fish.yaml
 ```
 
-The CI workflow runs those checks, the portable 20-file YAML corpus,
+The CI workflow runs those checks, the portable YAML conformance corpus,
 real-binary CLI tests, deterministic randomized stress checks and 54
-shell/privilege/timeout combinations. Schema 1 remains frozen; consumer-specific execution tests belong to Jobflick; Execarium also has
-schema-2 validation and example fixtures.
+shell/privilege/timeout combinations. Schemas 1 and 2 remain frozen; consumer-specific execution tests belong to Jobflick. Execarium has schema-2 and schema-3 validation and fixtures.
 
 ## Rules for evolving the format
 

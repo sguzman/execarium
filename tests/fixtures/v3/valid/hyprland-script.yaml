@@ -1,0 +1,10 @@
+schema: 3
+shell: fish
+cwd: /home/user/Projects/example
+privilege: none
+timeout_seconds: 600
+environment:
+  session: hyprland
+  gpu: nvidia
+command: |
+  hyprctl activewindow

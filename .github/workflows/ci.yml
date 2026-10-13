@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           version="$(grep -m1 '^version = "' Cargo.toml | cut -d '"' -f2)"
           test -n "$version"
-          cargo run --quiet -- --version | grep -Fx "execarium $version (schemas: 1,2)"
+          cargo run --quiet -- --version | grep -Fx "execarium $version (schemas: 1,2,3)"
       - name: Rust typed-construction example round-trips
         shell: bash
         run: |
@@ -72,6 +72,25 @@ jobs:
             echo "v2 must reject v1 command key" >&2
             exit 1
           fi
+      - name: Schema-3 examples and portable conformance corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./target/debug/execarium validate examples/hyprland-fish-v3.yaml | grep -q 'Valid Execarium schema 3.*session=hyprland, gpu=nvidia, steps=1'
+          ./target/debug/execarium validate examples/steps-wayland-v3.yaml | grep -q 'Valid Execarium schema 3.*session=wayland, gpu=integrated, steps=3'
+          for yaml in tests/fixtures/v3/valid/*.yaml; do
+            ./target/debug/execarium validate "$yaml" | grep -q 'Valid Execarium schema 3'
+          done
+          for yaml in tests/fixtures/v3/invalid/*.yaml; do
+            if ./target/debug/execarium validate "$yaml"; then
+              echo "Invalid schema-3 fixture was accepted: $yaml" >&2
+              exit 1
+            fi
+          done
+          if sed 's/schema: 3/schema: 2/' examples/hyprland-fish-v3.yaml | ./target/debug/execarium validate -; then
+            echo "v2 must reject v3 environment" >&2
+            exit 1
+          fi
       - name: CLI rejects unsupported input without executing it
         shell: bash
         run: |
@@ -105,7 +124,7 @@ jobs:
             exit 1
           fi
           cat > "$root/unsupported.yaml" <<'EOF'
-          schema: 3
+          schema: 4
           shell: fish
           cwd: /tmp
           privilege: none
@@ -156,11 +175,11 @@ jobs:
           cargo build --release
           mkdir -p dist/package
           install -m755 target/release/execarium dist/package/execarium
-          cp LICENSE README.md docs/SPEC-v1.md docs/SPEC-v2.md dist/package/
+          cp LICENSE README.md docs/SPEC-v1.md docs/SPEC-v2.md docs/SPEC-v3.md dist/package/
           tar -czf dist/execarium-linux-x86_64.tar.gz -C dist/package .
           (cd dist && sha256sum execarium-linux-x86_64.tar.gz > SHA256SUMS)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$tag" -m "Execarium $tag: schemas 1 and 2 library" "$GITHUB_SHA"
+          git tag -a "$tag" -m "Execarium $tag: schemas 1, 2 and 3 library" "$GITHUB_SHA"
           git push origin "refs/tags/$tag"
           gh release create "$tag" dist/execarium-linux-x86_64.tar.gz dist/SHA256SUMS --title "Execarium $tag" --generate-notes --verify-tag

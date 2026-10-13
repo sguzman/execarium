@@ -4,6 +4,16 @@ All notable releases are documented here. Rust implementation releases follow
 Semantic Versioning **independently** of the YAML schema integer; see
 [VERSIONING.md](docs/VERSIONING.md).
 
+## [1.3.0] — 2026-10-13
+
+**Post-MVP additive schema-3 execution-context contract and Rust API.**
+
+* New strict YAML schema 3: mandatory `environment.session` (`inherit`, `wayland`, `hyprland`) and `environment.gpu` (`inherit`, `integrated`, `nvidia`).
+* Exactly one `command` script or `commands` ordered stop-on-failure list, with original command size and timeout bounds.
+* New typed `v3::{Environment,Session,Gpu,CommandSource,Job,Validator}`; multi-schema parser, validator and validation-only CLI support.
+* Schema-3 conformance fixtures, Rust API tests, CLI acceptance checks and packaging of `SPEC-v3.md`.
+* Schemas 1 and 2, the legacy Rust v1 API, and validation-only behavior remain unchanged. Jobflick environment resolution is a separate follow-up.
+
 ## [1.2.0] — 2026-10-11
 
 **Backwards-compatible Rust API addition: new independent YAML schema 2.**

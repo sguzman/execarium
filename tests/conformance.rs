@@ -16,7 +16,7 @@ fn crate_semver_and_yaml_schema_are_independent_contracts() {
     }
     assert_eq!(execarium::IMPLEMENTATION_VERSION, env!("CARGO_PKG_VERSION"));
     assert_eq!(SCHEMA_VERSION, 1);
-    assert_eq!(execarium::SUPPORTED_SCHEMAS, &[1, 2]);
+    assert_eq!(execarium::SUPPORTED_SCHEMAS, &[1, 2, 3]);
 }
 
 const MINIMAL: &str =
