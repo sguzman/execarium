@@ -1,4 +1,7 @@
-use execarium::{parse_document, parse_document_for_schema, validate_for_schema, v1, v2, v3, Document, Error, Privilege, Shell, MAX_COMMAND_BYTES, MAX_DOCUMENT_BYTES};
+use execarium::{
+    parse_document, parse_document_for_schema, v1, v2, v3, validate_for_schema, Document, Error,
+    Privilege, Shell, MAX_COMMAND_BYTES, MAX_DOCUMENT_BYTES,
+};
 
 const SCRIPT: &str = include_str!("../examples/hyprland-fish-v3.yaml");
 const STEPS: &str = include_str!("../examples/steps-wayland-v3.yaml");
@@ -17,7 +20,10 @@ fn examples_are_exact_version_three_and_preserve_source_shape() {
     assert_eq!(steps.environment().gpu(), v3::Gpu::Integrated);
     assert_eq!(steps.commands().unwrap().len(), 3);
     assert!(steps.command().is_none());
-    assert!(matches!(parse_document_for_schema(3, STEPS).unwrap(), Document::V3(_)));
+    assert!(matches!(
+        parse_document_for_schema(3, STEPS).unwrap(),
+        Document::V3(_)
+    ));
     validate_for_schema(3, SCRIPT).unwrap();
     validate_for_schema(3, STEPS).unwrap();
     assert!(validate_for_schema(2, SCRIPT).is_err());
@@ -27,14 +33,19 @@ fn examples_are_exact_version_three_and_preserve_source_shape() {
 
 #[test]
 fn roundtrip_all_execution_contexts_and_both_command_shapes() {
-    for session in [v3::Session::Inherit, v3::Session::Wayland, v3::Session::Hyprland] {
+    for session in [
+        v3::Session::Inherit,
+        v3::Session::Wayland,
+        v3::Session::Hyprland,
+    ] {
         for gpu in [v3::Gpu::Inherit, v3::Gpu::Integrated, v3::Gpu::Nvidia] {
             let env = v3::Environment::new(session, gpu);
             for source in [
                 v3::CommandSource::Script("printf 'hello: world'\nand echo done\n".into()),
                 v3::CommandSource::Steps(vec!["printf ok".into(), "printf next".into()]),
             ] {
-                let job = v3::construct(Shell::Fish, "/tmp", Privilege::None, 600, env, source).unwrap();
+                let job =
+                    v3::construct(Shell::Fish, "/tmp", Privilege::None, 600, env, source).unwrap();
                 let yaml = job.to_yaml().unwrap();
                 assert_eq!(v3::parse(&yaml).unwrap(), job);
                 assert_eq!(v3::Validator::render(&job).unwrap(), yaml);
@@ -57,8 +68,14 @@ fn invalid_sources_and_environments_fail_closed() {
         ("gpu: nvidia", "gpu: cuda"),
         ("gpu: nvidia", "gpu: 42"),
         ("gpu: nvidia", "gpu: null"),
-        ("environment:\n  session: hyprland\n  gpu: nvidia", "environment: inherit"),
-        ("environment:\n  session: hyprland\n  gpu: nvidia", "environment:\n  session: hyprland"),
+        (
+            "environment:\n  session: hyprland\n  gpu: nvidia",
+            "environment: inherit",
+        ),
+        (
+            "environment:\n  session: hyprland\n  gpu: nvidia",
+            "environment:\n  session: hyprland",
+        ),
         ("timeout_seconds: 600", "timeout_seconds: '600'"),
         ("timeout_seconds: 600", "timeout_seconds: 0"),
         ("cwd: /home/user/Projects/example", "cwd: ../example"),
@@ -68,7 +85,10 @@ fn invalid_sources_and_environments_fail_closed() {
     for (old, new) in replacements {
         assert!(SCRIPT.contains(old));
         let malformed = SCRIPT.replacen(old, new, 1);
-        assert!(v3::parse(&malformed).is_err(), "unexpectedly accepted: {malformed}");
+        assert!(
+            v3::parse(&malformed).is_err(),
+            "unexpectedly accepted: {malformed}"
+        );
     }
     for suffix in [
         "command: echo extra\n",
@@ -77,7 +97,10 @@ fn invalid_sources_and_environments_fail_closed() {
         "executor: local\n",
     ] {
         let malformed = format!("{SCRIPT}{suffix}");
-        assert!(v3::parse(&malformed).is_err(), "unexpectedly accepted: {malformed}");
+        assert!(
+            v3::parse(&malformed).is_err(),
+            "unexpectedly accepted: {malformed}"
+        );
     }
     for bad_environment in [
         "environment:\n  session: hyprland\n  gpu: nvidia\n  extra: unknown",
@@ -88,7 +111,10 @@ fn invalid_sources_and_environments_fail_closed() {
             "environment:\n  session: hyprland\n  gpu: nvidia",
             bad_environment,
         );
-        assert!(v3::parse(&malformed).is_err(), "unexpectedly accepted: {malformed}");
+        assert!(
+            v3::parse(&malformed).is_err(),
+            "unexpectedly accepted: {malformed}"
+        );
     }
     for source in [
         v3::CommandSource::Script("".into()),
@@ -99,10 +125,14 @@ fn invalid_sources_and_environments_fail_closed() {
         v3::CommandSource::Steps(vec!["x".repeat(MAX_COMMAND_BYTES / 2); 3]),
     ] {
         assert!(v3::construct(
-            Shell::Fish, "/tmp", Privilege::None, 60,
+            Shell::Fish,
+            "/tmp",
+            Privilege::None,
+            60,
             v3::Environment::new(v3::Session::Inherit, v3::Gpu::Inherit),
             source
-        ).is_err());
+        )
+        .is_err());
     }
     assert!(matches!(
         v3::parse(&format!("{SCRIPT}#{}", "x".repeat(MAX_DOCUMENT_BYTES))),
@@ -123,19 +153,33 @@ fn preserves_v1_v2_contracts_and_legacy_entry_points() {
         parse_document(include_str!("../examples/sequence-fish.yaml")).unwrap(),
         Document::V2(_)
     ));
-    assert!(matches!(execarium::parse_for_schema(3, SCRIPT), Err(Error::UnsupportedSchema(3))));
-    assert!(matches!(parse_document_for_schema(1, SCRIPT), Err(Error::InvalidYaml(_))));
-    assert!(matches!(validate_for_schema(4, SCRIPT), Err(Error::UnsupportedSchema(4))));
+    assert!(matches!(
+        execarium::parse_for_schema(3, SCRIPT),
+        Err(Error::UnsupportedSchema(3))
+    ));
+    assert!(matches!(
+        parse_document_for_schema(1, SCRIPT),
+        Err(Error::InvalidYaml(_))
+    ));
+    assert!(matches!(
+        validate_for_schema(4, SCRIPT),
+        Err(Error::UnsupportedSchema(4))
+    ));
 }
 
 #[test]
 fn describes_commands_without_starting_them() {
-    let sentinel = std::env::temp_dir().join(format!("execarium-v3-no-exec-{}", std::process::id()));
+    let sentinel =
+        std::env::temp_dir().join(format!("execarium-v3-no-exec-{}", std::process::id()));
     let job = v3::construct(
-        Shell::Fish, "/tmp", Privilege::None, 60,
+        Shell::Fish,
+        "/tmp",
+        Privilege::None,
+        60,
         v3::Environment::new(v3::Session::Hyprland, v3::Gpu::Nvidia),
         v3::CommandSource::Script(format!("touch {}", sentinel.display())),
-    ).unwrap();
+    )
+    .unwrap();
     assert!(v3::parse(&job.to_yaml().unwrap()).is_ok());
     assert!(!sentinel.exists());
 }

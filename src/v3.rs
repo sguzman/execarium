@@ -106,13 +106,27 @@ struct RenderJob<'a> {
 }
 
 impl Job {
-    pub const fn schema(&self) -> u64 { self.schema }
-    pub const fn shell(&self) -> Shell { self.shell }
-    pub fn cwd(&self) -> &str { &self.cwd }
-    pub const fn privilege(&self) -> Privilege { self.privilege }
-    pub const fn timeout_seconds(&self) -> u64 { self.timeout_seconds }
-    pub const fn environment(&self) -> Environment { self.environment }
-    pub fn source(&self) -> &CommandSource { &self.source }
+    pub const fn schema(&self) -> u64 {
+        self.schema
+    }
+    pub const fn shell(&self) -> Shell {
+        self.shell
+    }
+    pub fn cwd(&self) -> &str {
+        &self.cwd
+    }
+    pub const fn privilege(&self) -> Privilege {
+        self.privilege
+    }
+    pub const fn timeout_seconds(&self) -> u64 {
+        self.timeout_seconds
+    }
+    pub const fn environment(&self) -> Environment {
+        self.environment
+    }
+    pub fn source(&self) -> &CommandSource {
+        &self.source
+    }
     pub fn command(&self) -> Option<&str> {
         match &self.source {
             CommandSource::Script(script) => Some(script),
@@ -164,24 +178,36 @@ fn checked(raw: RawJob) -> Result<Job, Error> {
     let source = match (raw.command, raw.commands) {
         (Some(script), None) => CommandSource::Script(script),
         (None, Some(steps)) => CommandSource::Steps(steps),
-        _ => return Err(Error::InvalidCommand("exactly one of command or commands is required")),
+        _ => {
+            return Err(Error::InvalidCommand(
+                "exactly one of command or commands is required",
+            ))
+        }
     };
     match &source {
         CommandSource::Script(script) => {
             crate::v1::construct(
-                raw.shell, raw.cwd.as_str(), raw.privilege,
-                raw.timeout_seconds, script.as_str(),
+                raw.shell,
+                raw.cwd.as_str(),
+                raw.privilege,
+                raw.timeout_seconds,
+                script.as_str(),
             )?;
         }
         CommandSource::Steps(steps) => {
             if steps.is_empty() || steps.len() > MAX_STEPS {
-                return Err(Error::InvalidCommand("commands must contain 1 to 256 steps"));
+                return Err(Error::InvalidCommand(
+                    "commands must contain 1 to 256 steps",
+                ));
             }
             let mut total = 0usize;
             for step in steps {
                 crate::v1::construct(
-                    raw.shell, raw.cwd.as_str(), raw.privilege,
-                    raw.timeout_seconds, step.as_str(),
+                    raw.shell,
+                    raw.cwd.as_str(),
+                    raw.privilege,
+                    raw.timeout_seconds,
+                    step.as_str(),
                 )?;
                 total = total.saturating_add(step.len());
                 if total > MAX_COMMAND_BYTES {
@@ -210,20 +236,25 @@ impl Validator {
         crate::reject_unsupported_yaml_features(input)?;
         let value: serde_yaml_ng::Value =
             serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
-        let mapping = value.as_mapping()
+        let mapping = value
+            .as_mapping()
             .ok_or_else(|| Error::InvalidYaml("top level must be a YAML mapping".into()))?;
         let get = |name: &str| mapping.get(serde_yaml_ng::Value::String(name.into()));
         if !matches!(
             get("schema"),
             Some(serde_yaml_ng::Value::Number(n)) if n.as_u64() == Some(SCHEMA)
         ) {
-            return Err(Error::InvalidYaml("schema must be the YAML integer 3".into()));
+            return Err(Error::InvalidYaml(
+                "schema must be the YAML integer 3".into(),
+            ));
         }
         if !matches!(
             get("timeout_seconds"),
             Some(serde_yaml_ng::Value::Number(n)) if n.as_u64().is_some()
         ) {
-            return Err(Error::InvalidYaml("timeout_seconds must be an unsigned YAML integer".into()));
+            return Err(Error::InvalidYaml(
+                "timeout_seconds must be an unsigned YAML integer".into(),
+            ));
         }
         if !matches!(get("cwd"), Some(serde_yaml_ng::Value::String(_))) {
             return Err(Error::InvalidYaml("cwd must be a YAML string".into()));
@@ -236,12 +267,20 @@ impl Validator {
         if let Some(commands) = get("commands") {
             match commands {
                 serde_yaml_ng::Value::Sequence(steps)
-                    if steps.iter().all(|step| matches!(step, serde_yaml_ng::Value::String(_))) => {}
-                _ => return Err(Error::InvalidYaml("commands must be a sequence of YAML strings".into())),
+                    if steps
+                        .iter()
+                        .all(|step| matches!(step, serde_yaml_ng::Value::String(_))) => {}
+                _ => {
+                    return Err(Error::InvalidYaml(
+                        "commands must be a sequence of YAML strings".into(),
+                    ))
+                }
             }
         }
         if !matches!(get("environment"), Some(serde_yaml_ng::Value::Mapping(_))) {
-            return Err(Error::InvalidYaml("environment must be a YAML mapping".into()));
+            return Err(Error::InvalidYaml(
+                "environment must be a YAML mapping".into(),
+            ));
         }
         let raw: RawJob =
             serde_yaml_ng::from_str(input).map_err(|e| Error::InvalidYaml(e.to_string()))?;
@@ -273,10 +312,16 @@ impl Validator {
             commands,
         })
     }
-    pub fn render(job: &Job) -> Result<String, Error> { job.to_yaml() }
+    pub fn render(job: &Job) -> Result<String, Error> {
+        job.to_yaml()
+    }
 }
-pub fn parse(input: &str) -> Result<Job, Error> { Validator::parse(input) }
-pub fn validate(input: &str) -> Result<(), Error> { Validator::validate(input) }
+pub fn parse(input: &str) -> Result<Job, Error> {
+    Validator::parse(input)
+}
+pub fn validate(input: &str) -> Result<(), Error> {
+    Validator::validate(input)
+}
 pub fn construct(
     shell: Shell,
     cwd: impl Into<String>,
