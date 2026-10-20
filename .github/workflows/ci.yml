@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           version="$(grep -m1 '^version = "' Cargo.toml | cut -d '"' -f2)"
           test -n "$version"
-          cargo run --quiet -- --version | grep -Fx "execarium $version (schemas: 1,2,3)"
+          cargo run --quiet -- --version | grep -Fx "execarium $version (schemas: 1,2,3,4)"
       - name: Rust typed-construction example round-trips
         shell: bash
         run: |
