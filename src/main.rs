@@ -24,7 +24,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Err("Usage: execarium --version".into());
         }
         println!(
-            "execarium {} (schemas: 1,2,3)",
+            "execarium {} (schemas: 1,2,3,4)",
             execarium::IMPLEMENTATION_VERSION
         );
         return Ok(());
@@ -57,6 +57,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             spec.privilege(),
             spec.timeout_seconds(),
             spec.commands().len()
+        ),
+        execarium::Document::V4(spec) => println!(
+            "Valid Execarium schema {} (name={}, shell={}, privilege={}, timeout_seconds={}, session={}, gpu={}, steps={})",
+            spec.schema(), spec.name(), spec.shell(), spec.privilege(), spec.timeout_seconds(),
+            spec.environment().session(), spec.environment().gpu(), spec.commands().map_or(1, |steps| steps.len())
         ),
         execarium::Document::V3(spec) => println!(
             "Valid Execarium schema {} (shell={}, privilege={}, timeout_seconds={}, session={}, gpu={}, steps={})",

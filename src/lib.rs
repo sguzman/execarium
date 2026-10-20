@@ -21,6 +21,7 @@
 
 pub mod v2;
 pub mod v3;
+pub mod v4;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -33,7 +34,7 @@ use yaml_rust2::scanner::{Scanner, TokenType};
 pub const SCHEMA_VERSION: u64 = 1;
 /// Explicitly supported YAML schema versions. Additional format versions
 /// require separately defined validators; never silently reinterpret v1.
-pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION, v2::SCHEMA, v3::SCHEMA];
+pub const SUPPORTED_SCHEMAS: &[u64] = &[SCHEMA_VERSION, v2::SCHEMA, v3::SCHEMA, v4::SCHEMA];
 /// Reference implementation version, independent of the YAML `schema` integer.
 pub const IMPLEMENTATION_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Maximum UTF-8 byte length of a complete YAML document.
@@ -150,7 +151,7 @@ pub enum Error {
     InvalidYaml(String),
     #[error("unsupported YAML feature: {0}")]
     UnsupportedYaml(&'static str),
-    #[error("unsupported Execarium schema version {0}; supported schemas are 1, 2 and 3")]
+    #[error("unsupported Execarium schema version {0}; supported schemas are 1, 2, 3 and 4")]
     UnsupportedSchema(u64),
     #[error("invalid working directory: {0}")]
     InvalidCwd(&'static str),
@@ -235,6 +236,7 @@ pub enum Document {
     V1(Job),
     V2(v2::Job),
     V3(v3::Job),
+    V4(v4::Job),
 }
 
 /// Parse exactly the version declared by the document; never reinterpret it.
@@ -243,6 +245,7 @@ pub fn parse_document(input: &str) -> Result<Document, Error> {
         1 => v1::Validator::parse(input).map(Document::V1),
         2 => v2::Validator::parse(input).map(Document::V2),
         3 => v3::Validator::parse(input).map(Document::V3),
+        4 => v4::Validator::parse(input).map(Document::V4),
         other => Err(Error::UnsupportedSchema(other)),
     }
 }
@@ -376,6 +379,7 @@ pub fn validate_for_schema(schema: u64, input: &str) -> Result<(), Error> {
         1 => v1::Validator::validate(input),
         2 => v2::Validator::validate(input),
         3 => v3::Validator::validate(input),
+        4 => v4::Validator::validate(input),
         other => Err(Error::UnsupportedSchema(other)),
     }
 }
