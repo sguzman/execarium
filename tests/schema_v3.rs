@@ -144,7 +144,7 @@ fn invalid_sources_and_environments_fail_closed() {
 
 #[test]
 fn preserves_v1_v2_contracts_and_legacy_entry_points() {
-    assert_eq!(execarium::SUPPORTED_SCHEMAS, &[1, 2, 3]);
+    assert_eq!(execarium::SUPPORTED_SCHEMAS, &[1, 2, 3, 4]);
     assert!(matches!(
         parse_document(include_str!("../examples/local-fish.yaml")).unwrap(),
         Document::V1(_)
