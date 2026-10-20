@@ -163,7 +163,7 @@ fn preserves_v1_v2_contracts_and_legacy_entry_points() {
     ));
     assert!(matches!(
         validate_for_schema(4, SCRIPT),
-        Err(Error::UnsupportedSchema(4))
+        Err(Error::InvalidYaml(_))
     ));
 }
 
