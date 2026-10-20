@@ -212,7 +212,7 @@ mod tests {
     fn validates_name_and_keeps_v3_strict() {
         for input in [
             good().replace("Verify project", ""),
-            good().replace("Verify project", "  Verify project  "),
+            good().replace("Verify project", "\"  Verify project  \""),
             good().replace("Verify project", "4"),
             good().replace("name: Verify project\n", ""),
             good().replace(
